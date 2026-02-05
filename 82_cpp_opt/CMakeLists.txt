@@ -12,7 +12,9 @@ find_package(Pagmo REQUIRED)
 
 
 add_executable(82opt
-            82opt.cpp)
+            82opt.cpp
+            fitness.cpp
+            82opt.h)
 
 
 target_link_libraries(82opt PRIVATE Pagmo::pagmo)
