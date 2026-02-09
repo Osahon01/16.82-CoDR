@@ -4,7 +4,6 @@
 #include <cmath>
 #include <initializer_list>
 #include <utility>
-#include <cassert>
 
 
 using namespace pagmo;
@@ -63,16 +62,4 @@ bool problem_fvd::invalid_ret(vector_double &x) const{
         }
     }
     return false;
-}
-
-// AI slop
-// Returns the air properties for a specified alt
-std::tuple<double, double, double> problem_fvd::standardAtmosphere(double altitudeMeters) const{
-    assert(altitudeMeters>=0 && altitudeMeters<=11000 && "Altitude outside of the allowable range (0 - 11km) passed to standard atmosphere model");
-    double T = T0 - L * altitudeMeters;
-    double exponent = (g / (R * L));
-    double P = P0 * pow((T / T0), exponent);
-    double rho = P / (R * T);
-
-    return std::make_tuple(T, P, rho);
 }
