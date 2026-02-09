@@ -22,7 +22,7 @@ try:
     cl_fn = ...
 
     model = ConcreteModel()
-    model.cl = Var(bounds=(0.5, 15))  # inequality constraints
+    model.cl = Var(bounds=(0.5, 15.0))  # inequality constraints
     model.n = Var(domain=Integers)  # type constraints
     model.cl_eq = Constraint(
         rule=cl_fn
