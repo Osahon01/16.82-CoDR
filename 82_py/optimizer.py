@@ -2,9 +2,16 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from pint import UnitRegistry
-from pyomo.environ import *
-from CoDR_equations import *
+from pyomo.environ import (
+    ConcreteModel,
+    Var,
+    Constraint,
+    Objective,
+    SolverFactory,
+    minimize,
+    Integers,
+)
+from CoDR_equations import g, N, PAY, RANGE, V_CRUISE, X_TAKEOFF
 
 try:
     # Objective function parameters
@@ -37,5 +44,5 @@ if __name__ == "__main__":
     # visualization
     if PLOT:
         plt.figure()
-        ...
+        # ...
         plt.show()
