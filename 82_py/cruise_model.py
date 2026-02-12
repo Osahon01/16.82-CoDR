@@ -43,10 +43,10 @@ if __name__ == "__main__":
     # End of takeoff (eot) parameters; TODO: Need this to be implemented in takeoff model
     v_cruise = takeoff_cls.v_eot  # assumed constant
     h_in = takeoff_cls.h_eot  # NOTE: Ensure that term is in meters
-    h_end = 10000 * ureg("ft").to_base_units()
-    h_cruise = np.linspace(h_in, h_end)
+    h_end = 10000 * ureg("ft").to_base_units().magnitude
+    h_cruise = np.linspace(h_in, h_end) if h_end > h_in else np.array(h_in)
 
     # TODO: Optionally allow for variable gamma over trajectory, but will need to define variable as time or height -- will affect setup
     # ...
-    gamma = 0.0  # placeholder, but add feature to vary this paraneter
-    cruis_cls = CruiseModel(s_wet, weight, v_cruise, h_cruise, aoa=gamma)
+    gamma = 0.0  # (unit: radians) - Can add feature to vary aoa_cruise down the line
+    cruise_cls = CruiseModel(s_wet, weight, v_cruise, h_cruise, aoa=gamma)
