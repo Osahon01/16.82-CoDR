@@ -1,26 +1,52 @@
-"""Simple Model for cruise."""
+"""Simple Model for cruise. NOTE: May need to install package(s) using pip"""
 
 import numpy as np
 from ambiance import Atmosphere
 from pint import UnitRegistry
-
-# NOTE: May need to install package using pip
+from takeoff_model import Takeoff_model
 
 # NOTE: Once takeoff code is published, I will read in inputs and update lift model accordingly
-# Biruk will add CD tradeoff study and conduct Cessna studies to calibrate a CD model (induced and parasitic)
+# TODO: Biruk will add CD tradeoff study and conduct Cessna studies to calibrate a CD model (induced and parasitic)
 
 ureg = UnitRegistry()
 
-# Design Variables
-h_end = 10000 * ureg("ft").to_base_units()
-gamma_fn = lambda t: (h_end - h_in) / t  # assuming I know time from Zach's power model
 
-atm = Atmosphere(
-    h=...
-)  # should be in meters; ensure that you use SI units for this using ureg
-rho = atm.density
-q = 0.5 * rho * (v**2)  # ASSUMPTION: cruise velocity is constant; relies
-L = W_fn * np.sin(gamma_fn)  # assumes I have weight as a function of time
-CL = L / (q * S)
+class CruiseModel:
+    def __init__(self, s_wet, weight, v_cruise, h_cruise, aoa) -> None:
+        self.atm = Atmosphere(h=h_cruise)
+        self.s_wet = s_wet
+        self.weight = weight
+        self.v_cruise = v_cruise
+        self.h_cruise = h_cruise
+        self.density = self.atm.density
+        self.aoa = aoa
 
-# We want cruise shaft power
+    def get_CL(self):
+        q = 0.5 * self.density * (v_cruise**2)
+        L = self.weight * np.cos(
+            self.aoa
+        )  # assumes I have weight as a function of time
+        return L / (q * self.s_wet)
+
+    # TODO: Do we want cruise shaft power?
+
+
+# Runner script
+if __name__ == "__main__":
+    # Design Variables
+    takeoff_cls = Takeoff_model(
+        T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0, AR, e
+    )  # TODO: parameters need to be defined somewhere
+    s_wet = takeoff_cls.S
+    weight = takeoff_cls.weight  # TODO: Need this to be implemented in takeoff model; function of time or altitude
+
+    # End of takeoff (eot) parameters; TODO: Need this to be implemented in takeoff model
+    v_cruise = takeoff_cls.v_eot  # assumed constant
+    h_in = takeoff_cls.h_eot  # NOTE: Ensure that term is in meters
+    h_end = 10000 * ureg("ft").to_base_units()
+    h_cruise = np.linspace(h_in, h_end)
+
+    # TODO: Optionally allow for variable gamma over trajectory, but will need to define variable as time or height -- will affect setup
+    # ...
+    gamma = 0.0  # placeholder, but add feature to vary this paraneter
+    cruis_cls = CruiseModel(s_wet, weight, v_cruise, h_cruise, aoa=gamma)
