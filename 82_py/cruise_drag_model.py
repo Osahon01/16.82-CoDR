@@ -14,7 +14,7 @@ S = 26           # wing area (m^2)
 q = 0.5 * rho * V**2
 
 # # Structural model
-W_fixed = 36000 #30000      # N (everything except wing)
+W_fixed = 3600 #30000      # N (everything except wing)
 # k = 1000          # wing structural scaling constant
 
 AR = np.linspace(3, 18, 200)
