@@ -1,9 +1,9 @@
-from Takeoff_model import Takeoff_model
+from takeoff_model import TakeoffModel
 import matplotlib.pyplot as plt
 import numpy as np
 
 # Old code for plotting x_TO versus cruise velocity
-'''# Fixed parameters
+"""# Fixed parameters
 S = 25.9  # m^2
 W = 3600 * 9.81 # N
 CLTO = 1.4
@@ -73,4 +73,4 @@ ax.text(0.75, 0.25, 'high wing loading', transform=ax.transAxes, fontsize=11,
 ax.legend(fontsize=10)
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.show()'''
+plt.show()"""

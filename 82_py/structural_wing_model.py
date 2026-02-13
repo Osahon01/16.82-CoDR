@@ -1,6 +1,8 @@
 from math import sqrt, pi
+from math import radians
 
-class structural_wing_model:
+
+class StructuralWingModel:
     """
     First-pass structural mass model for a (single-cell) wingbox:
       - Spar caps sized by wing root bending from lift (elliptical spanwise load)
@@ -25,17 +27,14 @@ class structural_wing_model:
         FOS,
         rho_spar,
         rho_skin,
-
         # (From Google) "Medium quality" carbon composite design allowables
         sigma_allow_design=450e6,  # Pa
-        tau_allow_design=80e6,     # Pa
-
+        tau_allow_design=80e6,  # Pa
         # Wingbox geometry assumptions
         box_width_frac=0.45,
         box_height_frac=0.12,
-
         # Skin minimum gauge
-        min_skin_thickness=0.0012
+        min_skin_thickness=0.0012,
     ):
         # Primary inputs
         self.L_max = L_max
@@ -121,7 +120,9 @@ class structural_wing_model:
         c = self.mean_chord
         h = self.box_height_frac * c
         if h <= 0:
-            raise ValueError("Computed wingbox height is non-positive; check geometry fractions.")
+            raise ValueError(
+                "Computed wingbox height is non-positive; check geometry fractions."
+            )
 
         M_root = self.root_bending_moment_elliptical()
 
@@ -150,7 +151,9 @@ class structural_wing_model:
         w = self.box_width_frac * c
         h = self.box_height_frac * c
         if w <= 0 or h <= 0:
-            raise ValueError("Computed wingbox dimensions are non-positive; check geometry fractions.")
+            raise ValueError(
+                "Computed wingbox dimensions are non-positive; check geometry fractions."
+            )
 
         A_m = w * h
         p = 2.0 * (w + h)
@@ -165,8 +168,10 @@ class structural_wing_model:
     def mass_breakdown(self) -> tuple[float, float]:
         """Return (m_spar, m_skin) in kg."""
         return self.spar_mass(), self.skin_mass()
-    
+
     # Example sizing point (SI units)
+
+
 # Suppose:
 # - L_max is total lift at the sizing condition (N)
 # - M_max is total torsional torque to be reacted by the wingbox (N*m)
@@ -175,24 +180,21 @@ class structural_wing_model:
 # - FOS is factor of safety (-)
 # - rho_* are material densities (kg/m^3)
 
-from math import radians
 
 # Paste/import the structural_model class definition above before running this.
 
-model = structural_wing_model(
-    L_max=120_000.0,   # N
-    M_max=30_000.0,    # N*m (torsion torque, NOT bending)
-    S=28.0,            # m^2
-    AR=9.5,            # -
-    FOS=1.5,           # -
-
+model = StructuralWingModel(
+    L_max=120_000.0,  # N
+    M_max=30_000.0,  # N*m (torsion torque, NOT bending)
+    S=28.0,  # m^2
+    AR=9.5,  # -
+    FOS=1.5,  # -
     # "Medium quality" carbon composite-ish densities (typical range ~1500-1700)
-    rho_spar=1600.0,   # kg/m^3
-    rho_skin=1550.0,   # kg/m^3
-
+    rho_spar=1600.0,  # kg/m^3
+    rho_skin=1550.0,  # kg/m^3
     # Optional: override allowables if you have better laminate allowables
     sigma_allow_design=450e6,  # Pa
-    tau_allow_design=80e6      # Pa
+    tau_allow_design=80e6,  # Pa
 )
 
 m_spar, m_skin = model.mass_breakdown()
@@ -203,4 +205,3 @@ print(f"Root bending moment : {model.root_bending_moment_elliptical():.1f} N*m")
 print(f"Estimated spar mass : {m_spar:.2f} kg")
 print(f"Estimated skin mass : {m_skin:.2f} kg")
 print(f"Total (spar+skin)   : {(m_spar + m_skin):.2f} kg")
-

@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ambiance import Atmosphere
 from pint import UnitRegistry
-from Takeoff_model import Takeoff_model
+from takeoff_model import TakeoffModel
 
 # NOTE: Once takeoff code is published, I will read in inputs and update lift model accordingly
 # TODO: Biruk will add CD tradeoff study and conduct Cessna Caravan studies to calibrate a CD model (induced and parasitic)
@@ -54,7 +54,7 @@ class CruiseModel:
 if __name__ == "__main__":
     # Design Variables
     aspect_ratio = np.linspace(5, 15, 100)  # TODO: desired AR sweep range
-    e = 0.8  # TODO: determine if this value is a reasonable guess
+    e = 0.7  # TODO: determine if this value is a reasonable guess
     Cd0 = 0.03  # TODO: For now, I'm assuming this value based on similar aircraft. As stated earlier
     # we need to decide if this is a cruise team issue or takeoff team issue
 
@@ -116,4 +116,4 @@ if __name__ == "__main__":
         plt.grid()
         plt.show()
 
-    print(f"{50 * '='}\nBest AR: {np.round(min(cruise_cls.cd_total(), 2))}\n{50 * '='}")
+    print(f"{50 * '='}\nBest AR: {np.round(min(cruise_cls.cd_total()), 2)}\n{50 * '='}")

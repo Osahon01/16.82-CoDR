@@ -4,8 +4,9 @@ from scipy.optimize import fsolve
 from CoDR_equations import g
 from ambiance import Atmosphere
 
+
 # Define the Takeoff model class
-class takeoff_model:
+class TakeoffModel:
     def __init__(self, T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0, AR, e):
         # Inputs (knowns)
         self.T_W_takeoff = T_W_takeoff
@@ -21,7 +22,7 @@ class takeoff_model:
         # Constants
         self.g = g  # Acceleration due to gravity (m/s^2)
         self.rho_SL = Atmosphere(h=0).density  # Air density at sea level (kg/m^3)
-        self.rho_cruise = None # Atmosphere(h=H_END).density  # Air density at cruise (kg/m^3) - CURRENTLY ASSUMING 3000m CRUISE
+        self.rho_cruise = None  # Atmosphere(h=H_END).density  # Air density at cruise (kg/m^3) - CURRENTLY ASSUMING 3000m CRUISE
 
         self.eta_v = 0.7  # Propeller efficiency (assumed constant for simplicity)
         self.eta_add = 0.7  # Additional efficiency factor from swirl and propwash at low speeds (assumed constant for simplicity)

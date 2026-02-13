@@ -1,6 +1,7 @@
 import math
 
-class climb_model:
+
+class ClimbModel:
     """
     Simple climb model with constant-density assumption evaluated at h_cruise.
 
@@ -60,10 +61,10 @@ class climb_model:
         """
         h = self.h_cruise
 
-        T0 = 288.15      # K
-        p0 = 101325.0    # Pa
-        L = 0.0065       # K/m
-        R = 287.05287    # J/(kg*K)
+        T0 = 288.15  # K
+        p0 = 101325.0  # Pa
+        L = 0.0065  # K/m
+        R = 287.05287  # J/(kg*K)
 
         T = T0 - L * h
         if T <= 0:
@@ -81,8 +82,7 @@ class climb_model:
         if v <= 0:
             raise ValueError("Velocity must be positive.")
         P_eff = (
-            self.P_generator * self.eta_generator
-            + self.P_battery * self.eta_battery
+            self.P_generator * self.eta_generator + self.P_battery * self.eta_battery
         )
         return P_eff / v
 
@@ -101,9 +101,7 @@ class climb_model:
         if denominator <= 0:
             raise ValueError("Invalid aerodynamic parameters.")
         if numerator <= 0:
-            raise ValueError(
-                "No real solution: T_W must exceed sin(gamma)."
-            )
+            raise ValueError("No real solution: T_W must exceed sin(gamma).")
 
         v = math.sqrt(numerator / denominator)
         return v
@@ -140,9 +138,10 @@ class climb_model:
         """
         return self.battery_mass_for_climb()
 
+
 # EXAMPLE USAGE
 
-'''if __name__ == "__main__":
+"""if __name__ == "__main__":
     gamma = math.radians(5.0)
 
     # 250 Wh/kg converted to J/kg
@@ -163,4 +162,4 @@ class climb_model:
 
     print(f"Climb velocity: {model.solve_velocity():.2f} m/s")
     print(f"Time to climb: {model.time_of_climb()/60:.2f} min")
-    print(f"Battery mass required: {model.get_m_battery():.2f} kg")'''
+    print(f"Battery mass required: {model.get_m_battery():.2f} kg")"""
