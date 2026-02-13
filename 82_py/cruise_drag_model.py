@@ -1,40 +1,51 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from ambiance import Atmosphere
 
 # Constants
 pi = np.pi
-e = 0.8
+AR = 9.7
+e = 0.7
 CD0 = 0.032
 
-# Cruise conditions
-rho = 1       # density (kg/m^3) approximate
-V = 96          # cruise speed (m/s)
-S = 26           # wing area (m^2)
+# Aircraft parameters (Caravan-like)
+W = 39000        # N
+S = 26           # m^2
+h = 3000         # meters (~10,000 ft)
+
+# Atmosphere
+atm = Atmosphere(h)
+rho = atm.density[0]
+
+# Velocity sweep (m/s)
+V = np.linspace(40, 120, 500) #Note: Cessna Caravan has cruise speed of about 96 m/s
 
 q = 0.5 * rho * V**2
 
-# # Structural model
-W_fixed = 3600 #30000      # N (everything except wing)
-# k = 1000          # wing structural scaling constant
+# Required CL for level flight
+CL = W / (q * S)
 
-AR = np.linspace(3, 18, 200)
-# W = W_fixed + k * AR**2 # Weight model
-W = W_fixed
-CL = W / (q * S) # Required CL
-CDi = CL**2 / (pi * AR * e) # Induced drag
-CD = CD0 + CDi # Total drag
-LD = CL / CD # L/D
+# Drag components
+CDi = CL**2 / (pi * AR * e)
+
+Di = q * S * CDi
+Dp = q * S * CD0
+
+D_total = Di + Dp
 
 # Plot
-plt.figure()
-plt.plot(AR, LD)
-plt.xlabel("Aspect Ratio")
-plt.ylabel("L/D")
-plt.title("L/D vs Aspect Ratio (Including Structural Penalty)")
+plt.figure(figsize=(8,6))
+plt.plot(V, Di, label="Induced Drag")
+plt.plot(V, Dp, label="Parasite Drag")
+plt.plot(V, D_total, label="Total Drag", linewidth=2)
+plt.xlabel("Velocity (m/s)")
+plt.ylabel("Drag (N)")
+plt.title("Drag vs Velocity")
+plt.legend()
 plt.grid()
 plt.show()
 
-# Print optimum
-best_index = np.argmax(LD)
-print("Optimal AR:", AR[best_index])
+# Find minimum drag speed
+min_index = np.argmin(D_total)
+print("Velocity at Minimum Drag:", V[min_index], "m/s")
 
