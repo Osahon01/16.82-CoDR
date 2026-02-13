@@ -2,15 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ambiance import Atmosphere
 
+# TODO: find parastic drag through wind tunnel test data 
+
 # Constants
 pi = np.pi
-AR = 9.7
+AR = 9.702
 e = 0.7
 CD0 = 0.032
 
 # Aircraft parameters (Caravan-like)
 W = 39000        # N
-S = 26           # m^2
+S = 25.96        # m^2
 h = 3000         # meters (~10,000 ft)
 
 # Atmosphere
@@ -28,15 +30,15 @@ CL = W / (q * S)
 # Drag components
 CDi = CL**2 / (pi * AR * e)
 
-Di = q * S * CDi
-Dp = q * S * CD0
+D_i = q * S * CDi
+D_p = q * S * CD0
 
-D_total = Di + Dp
+D_total = D_i + D_p
 
 # Plot
 plt.figure(figsize=(8,6))
-plt.plot(V, Di, label="Induced Drag")
-plt.plot(V, Dp, label="Parasite Drag")
+plt.plot(V, D_i, label="Induced Drag")
+plt.plot(V, D_p, label="Parasite Drag")
 plt.plot(V, D_total, label="Total Drag", linewidth=2)
 plt.xlabel("Velocity (m/s)")
 plt.ylabel("Drag (N)")
