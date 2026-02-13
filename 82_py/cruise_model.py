@@ -35,17 +35,12 @@ class CruiseModel:
         )  # assumes I have weight as a function of time
         return L / (self.q * self.s_ref)
 
-    # def cd_induced(self):
-    #     # see eqn: https://www.grc.nasa.gov/www/k-12/VirtualAero/BottleRocket/airplane/induced.html
-    #     return (self.cl() ** 2) / (np.pi * self.aspect_ratio * self.e)
     def cd_induced(self, AR):
+        # see eqn: https://www.grc.nasa.gov/www/k-12/VirtualAero/BottleRocket/airplane/induced.html
         return (self.cl() ** 2) / (np.pi * AR * self.e)
 
-    # TODO: determine whether this number should be estimated by cruise or takeoff teams 
-    def cd_parasitic(self): 
-        # Assume gamma=0, and T=D
-        ## cd_parasitic = cd_form + cd_skin_friction
-        # return self.thrust / (self.q * self.s_ref)
+    # TODO: determine whether this number should be estimated by cruise or takeoff teams
+    def cd_parasitic(self):
         return self.Cd0
 
     def cd_total(self, AR):
@@ -59,10 +54,10 @@ class CruiseModel:
 if __name__ == "__main__":
     # Design Variables
     aspect_ratio = np.linspace(5, 15, 100)  # TODO: desired AR sweep range
-    e = .8  # TODO: determine if this value is a reasonable guess
-    Cd0 = 0.03 # TODO: For now, I'm assuming this value based on similar aircraft. As stated earlier
-               # we need to decide if this is a cruise team issue or takeoff team issue
-    
+    e = 0.8  # TODO: determine if this value is a reasonable guess
+    Cd0 = 0.03  # TODO: For now, I'm assuming this value based on similar aircraft. As stated earlier
+    # we need to decide if this is a cruise team issue or takeoff team issue
+
     # # Takeoff Model values
     # T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0 = [10,10,10,10,10,10,10]
     # takeoff_cls = Takeoff_model(
@@ -94,15 +89,7 @@ if __name__ == "__main__":
     # )
 
     cruise_cls = CruiseModel(
-        10,
-        1000,
-        100,
-        4000,
-        aoa=gamma,
-        aspect_ratio=None,
-        e=e,
-        thrust=5000,
-        Cd0=Cd0
+        10, 1000, 100, 4000, aoa=gamma, aspect_ratio=None, e=e, thrust=5000, Cd0=Cd0
     )
 
     CD_total = cruise_cls.cd_total(aspect_ratio)
