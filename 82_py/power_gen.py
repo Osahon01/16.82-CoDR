@@ -1,263 +1,282 @@
 """
 DEP sizing + takeoff metric + cruise fuel burn + parameter sweeps w/ contour plots.
 
-Attribute-based version (no dictionary passing).
-All math unchanged.
+Adds:
+- Cruise fuel mass (kg) and fuel flow (kg/s, kg/hr) using APU efficiency + Jet-A LHV
+- Objective function to: minimize takeoff metric, maximize cruise speed, enforce wing loading <= 250 kg/m^2
+- Extra contour: required generator electrical power at cruise (kW) (this is already P_gen_elec_kW)
+
+Notes:
+- LHV should be ~42 MJ/kg (not kJ/kg).
+- eta_apu_overall is "fuel -> electrical bus" overall efficiency.
 """
 
+import math
 import numpy as np
 import matplotlib.pyplot as plt
+from dataclasses import dataclass, asdict
+from CoDR_equations import g, V_CRUISE
+from ambiance import Atmosphere
 
 
-# -------------------------
-# Atmosphere (ISA, up to 11 km)
-# -------------------------
-def isa_density(alt_m: float) -> float:
-    g0 = 9.80665
-    R = 287.05287
-    T0 = 288.15
-    p0 = 101325.0
-    L = 0.0065
+@dataclass
+class AircraftConfig:
+    """Input parameters for the DEP sizing model."""
 
-    alt_m = max(0.0, alt_m)
-    if alt_m > 11000.0:
-        raise ValueError("isa_density only implemented up to 11,000 m")
+    # TODO: update inputs
 
-    T = T0 - L * alt_m
-    p = p0 * (T / T0) ** (g0 / (R * L))
-    return p / (R * T)
+    g0: float = g
+    range_m: float = 2500e3
+    V_cruise: float = 125.0
+    alt_cruise_m: float = 10000.0 * 0.3048
+
+    Cd: float = 0.02
+    CLmax: float = 7.0
+
+    # design vars
+    mass_kg: float = 4000.0
+    wing_loading_kgm2: float = 180.0
+    thrust_loading_TW: float = 0.4
+
+    # efficiencies & margin
+    eta_prop: float = 0.85
+    eta_motor: float = 0.95
+    eta_inverter: float = 0.98
+    eta_gearbox: float = 1.0
+    eta_generator: float = 0.95
+    power_margin: float = 1.15
+
+    # Fuel/APU (Jet-A LHV ~42 MJ/kg)
+    eta_apu_overall: float = 0.30
+    LHV_MJ_per_kg: float = 42.0
+
+    rho_to_kgm3: float = Atmosphere(h=0).density[0]  # Sea level standard
+    V_ref: float = V_CRUISE
+    w_to: float = 1.0
+    w_V: float = 1.0
+    wing_loading_limit: float = 250.0
+    penalty_weight: float = 50.0
 
 
-# =========================
-# DEP MODEL
-# =========================
+@dataclass
+class MissionResults:
+    """Calculated output metrics."""
+
+    rho_cruise_kgm3: float = 0.0
+    wing_area_m2: float = 0.0
+    thrust_required_N: float = 0.0
+    P_gen_elec_kW: float = 0.0
+    P_gen_sized_kW: float = 0.0
+    x_to_metric: float = 0.0
+    cruise_time_hr: float = 0.0
+    cruise_energy_MWh: float = 0.0
+    fuel_mass_cruise_kg: float = 0.0
+    fuel_flow_cruise_kg_hr: float = 0.0
+    objective_J: float = 0.0
+
+
+# Sizing model
 class DEPSizingModel:
+    def isa_density(self, alt_m: float) -> float:
+        g0, R, T0, p0, L = 9.80665, 287.05287, 288.15, 101325.0, 0.0065
+        alt_m = max(0.0, alt_m)
+        if alt_m > 11000.0:
+            raise ValueError("isa_density only implemented up to 11,000 m")
+        T = T0 - L * alt_m
+        p = p0 * (T / T0) ** (g0 / (R * L))
+        return p / (R * T)
 
-    def __init__(
-        self,
-        range_m,
-        V_cruise,
-        alt_cruise_m,
-        Cd,
-        mass_kg,
-        wing_loading_kgm2,
-        thrust_loading_TW,
-        CLmax,
-        g,
-        eta_prop,
-        eta_motor,
-        eta_inverter,
-        eta_gearbox,
-        eta_generator,
-        power_margin,
-        eta_apu_overall=0.30,
-        LHV_MJ_per_kg=42.0,
-        V_ref=125.0,
-        w_to=1.0,
-        w_V=1.0,
-        wing_loading_limit=250.0,
-        penalty_weight=50.0,
-    ):
+    def compute_performance(
+        self, cfg: AircraftConfig, x_to_ref: float = 1.0
+    ) -> MissionResults:
+        res = MissionResults()
 
-        # Store inputs
-        self.range_m = range_m
-        self.V_cruise = V_cruise
-        self.alt_cruise_m = alt_cruise_m
-        self.Cd = Cd
-        self.mass_kg = mass_kg
-        self.wing_loading_kgm2 = wing_loading_kgm2
-        self.thrust_loading_TW = thrust_loading_TW
-        self.CLmax = CLmax
-        self.g = g
+        res.wing_area_m2 = (
+            cfg.mass_kg / cfg.wing_loading_kgm2
+        )  # wing area from mass wing loading
 
-        self.eta_prop = eta_prop
-        self.eta_motor = eta_motor
-        self.eta_inverter = eta_inverter
-        self.eta_gearbox = eta_gearbox
-        self.eta_generator = eta_generator
-        self.power_margin = power_margin
+        # cruise drag -> thrust required
+        res.rho_cruise_kgm3 = self.isa_density(cfg.alt_cruise_m)
+        q = 0.5 * res.rho_cruise_kgm3 * cfg.V_cruise**2
+        res.thrust_required_N = q * res.wing_area_m2 * cfg.Cd
 
-        self.eta_apu_overall = eta_apu_overall
-        self.LHV_MJ_per_kg = LHV_MJ_per_kg
-
-        self.V_ref = V_ref
-        self.w_to = w_to
-        self.w_V = w_V
-        self.wing_loading_limit = wing_loading_limit
-        self.penalty_weight = penalty_weight
-
-
-    # -------------------------
-    # Core Computation
-    # -------------------------
-    def compute(self):
-
-        self.wing_area_m2 = self.mass_kg / self.wing_loading_kgm2
-
-        self.rho_cruise_kgm3 = isa_density(self.alt_cruise_m)
-        q = 0.5 * self.rho_cruise_kgm3 * self.V_cruise**2
-
-        self.thrust_required_N = q * self.wing_area_m2 * self.Cd
-
-        P_thrust = self.thrust_required_N * self.V_cruise
-        P_shaft = P_thrust / self.eta_prop
-        eta_down = self.eta_motor * self.eta_inverter * self.eta_gearbox
+        # power calcs
+        P_thrust = res.thrust_required_N * cfg.V_cruise
+        P_shaft = P_thrust / max(cfg.eta_prop, 1e-12)
+        eta_down = max(cfg.eta_motor * cfg.eta_inverter * cfg.eta_gearbox, 1e-12)
         P_bus = P_shaft / eta_down
-        P_gen_elec = P_bus / self.eta_generator
+        res.P_gen_elec_kW = (P_bus / max(cfg.eta_generator, 1e-12)) / 1000.0
+        res.P_gen_sized_kW = res.P_gen_elec_kW * cfg.power_margin
 
-        self.P_gen_elec_kW = P_gen_elec / 1000.0
-        self.P_gen_sized_kW = self.P_gen_elec_kW * self.power_margin
-
-        rho_to = isa_density(0.0)
-        W_over_S = self.wing_loading_kgm2 * self.g
-
-        self.x_to_metric = (
-            (W_over_S / self.thrust_loading_TW)
-            * (1.0 / (rho_to * self.g))
-            * (1.0 / self.CLmax)
+        # takeoff metric
+        W_over_S = cfg.wing_loading_kgm2 * cfg.g0
+        res.x_to_metric = (
+            (W_over_S / max(cfg.thrust_loading_TW, 1e-12))
+            * (1.0 / (cfg.rho_to_kgm3 * cfg.g0))
+            * (1.0 / max(cfg.CLmax, 1e-12))
         )
 
-        t_cruise = self.range_m / self.V_cruise
-        self.cruise_time_hr = t_cruise / 3600.0
+        # mission time/energy/fuel
+        res.cruise_time_hr = (cfg.range_m / max(cfg.V_cruise, 1e-12)) / 3600.0
+        res.cruise_energy_MWh = (
+            res.P_gen_elec_kW * 1000.0 * (res.cruise_time_hr * 3600.0)
+        ) / 3.6e9
 
-        E_cruise_J = P_gen_elec * t_cruise
-        self.cruise_energy_MWh = E_cruise_J / 3.6e9
-
-        E_MJ = self.cruise_energy_MWh * 3600.0
-        self.fuel_mass_cruise_kg = (
-            E_MJ / (self.eta_apu_overall * self.LHV_MJ_per_kg)
+        E_MJ = res.cruise_energy_MWh * 3.6e9 / 1e6  # convert MWh back to MJ
+        res.fuel_mass_cruise_kg = E_MJ / max(
+            cfg.eta_apu_overall * cfg.LHV_MJ_per_kg, 1e-12
+        )
+        res.fuel_flow_cruise_kg_hr = res.fuel_mass_cruise_kg / max(
+            res.cruise_time_hr, 1e-12
         )
 
-        self.fuel_flow_cruise_kg_hr = (
-            self.fuel_mass_cruise_kg / self.cruise_time_hr
-        )
+        # obj fn
+        x_to_hat = res.x_to_metric / max(x_to_ref, 1e-12)
+        V_hat = cfg.V_cruise / max(cfg.V_ref, 1e-12)
 
-
-    # -------------------------
-    # Objective
-    # -------------------------
-    def compute_objective(self, x_to_ref):
-
-        x_to_hat = self.x_to_metric / x_to_ref
-        V_hat = self.V_cruise / self.V_ref
-
-        if self.wing_loading_kgm2 <= self.wing_loading_limit:
-            penalty = 0.0
-        else:
+        penalty = 0.0
+        if cfg.wing_loading_kgm2 > cfg.wing_loading_limit:
             penalty = (
-                self.penalty_weight
-                * ((self.wing_loading_kgm2 - self.wing_loading_limit)
-                   / self.wing_loading_limit) ** 2
+                cfg.penalty_weight
+                * (
+                    (cfg.wing_loading_kgm2 - cfg.wing_loading_limit)
+                    / cfg.wing_loading_limit
+                )
+                ** 2
             )
 
-        self.objective_J = (
-            self.w_to * x_to_hat - self.w_V * V_hat + penalty
-        )
+        res.objective_J = cfg.w_to * x_to_hat - cfg.w_V * V_hat + penalty
+
+        return res
+
+    def sweep_2d(
+        self,
+        cfg_base: AircraftConfig,
+        x_attr: str,
+        x_vals: np.ndarray,
+        y_attr: str,
+        y_vals: np.ndarray,
+        z_attr: str,
+    ):
+        X, Y = np.meshgrid(x_vals, y_vals)
+        Z = np.zeros_like(X)
+
+        # baseline
+        base_res = self.compute_performance(cfg_base)
+        x_to_ref = base_res.x_to_metric
+
+        for i in range(len(y_vals)):
+            for j in range(len(x_vals)):
+                # Clone config and update the two sweep attributes
+                point_cfg = AircraftConfig(**asdict(cfg_base))
+                setattr(point_cfg, x_attr, X[i, j])
+                setattr(point_cfg, y_attr, Y[i, j])
+
+                res = self.compute_performance(point_cfg, x_to_ref=x_to_ref)
+                Z[i, j] = getattr(res, z_attr)
+        return X, Y, Z
+
+    def contour_plot(
+        self, X, Y, Z, x_label, y_label, title, levels=25, limit_line=None
+    ):
+        plt.figure(figsize=(9, 6))
+        cp = plt.contourf(X, Y, Z, levels=levels, cmap="viridis")
+        plt.colorbar(cp, label=title)
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+        plt.title(title)
+
+        if limit_line:
+            plt.axvline(
+                limit_line, color="red", linestyle="--", label="Wing Loading Limit"
+            )
+            plt.legend()
+        plt.tight_layout()
 
 
-# =========================
-# SWEEP + CONTOUR
-# =========================
-def sweep_2d(
-    base_params,
-    x_key,
-    x_vals,
-    y_key,
-    y_vals,
-    z_attr,
-):
-
-    X, Y = np.meshgrid(x_vals, y_vals)
-    Z = np.full_like(X, np.nan, dtype=float)
-
-    base_model = DEPSizingModel(**base_params)
-    base_model.compute()
-    x_to_ref = base_model.x_to_metric
-
-    for i in range(Y.shape[0]):
-        for j in range(X.shape[1]):
-
-            p = dict(base_params)
-            p[x_key] = float(X[i, j])
-            p[y_key] = float(Y[i, j])
-
-            model = DEPSizingModel(**p)
-            model.compute()
-            model.compute_objective(x_to_ref)
-
-            Z[i, j] = getattr(model, z_attr)
-
-    return X, Y, Z
-
-
-def contour_plot(
-    X,
-    Y,
-    Z,
-    x_label,
-    y_label,
-    title,
-    levels=20,
-):
-
-    plt.figure()
-    cs = plt.contourf(X, Y, Z, levels=levels)
-    plt.colorbar(cs, label=title)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(title)
-    plt.tight_layout()
-    plt.show()
-
-
-# =========================
-# Example Run
-# =========================
+# Runner Script
 if __name__ == "__main__":
+    model = DEPSizingModel()
+    config = AircraftConfig()
 
-    params = dict(
-        range_m=2500e3,
-        V_cruise=125.0,
-        alt_cruise_m=10000.0 * 0.3048,
-        Cd=0.02,
-        mass_kg=4000,
-        wing_loading_kgm2=180,
-        thrust_loading_TW=0.4,
-        CLmax=7.0,
-        g=9.80665,
-        eta_prop=0.85,
-        eta_motor=0.95,
-        eta_inverter=0.98,
-        eta_gearbox=1.0,
-        eta_generator=0.95,
-        power_margin=1.15,
-    )
+    # baseline calc
+    # Ran it twice - one to get the baseline x_to_ref, and once to get the normalized objective
+    temp_res = model.compute_performance(config)
+    final_res = model.compute_performance(config, x_to_ref=temp_res.x_to_metric)
 
-    model = DEPSizingModel(**params)
-    model.compute()
-    model.compute_objective(model.x_to_metric)
+    print("=== DEP Generator Sizing + Takeoff + Cruise Fuel + Objective ===")
+    print(f"Cruise density rho:          {final_res.rho_cruise_kgm3:.3f} kg/m^3")
+    print(f"Wing area S:                {final_res.wing_area_m2:.2f} m^2")
+    print(f"Cruise thrust required:     {final_res.thrust_required_N:.0f} N")
+    print(f"Generator (cruise) output:  {final_res.P_gen_elec_kW:.1f} kW")
+    print(f"Generator (sized) rating:   {final_res.P_gen_sized_kW:.1f} kW")
+    print(f"x_to metric:                {final_res.x_to_metric:.4f}")
+    print(f"Cruise time:                {final_res.cruise_time_hr:.2f} hr")
+    print(f"Cruise energy:              {final_res.cruise_energy_MWh:.3f} MWh")
+    print(f"Cruise fuel mass:           {final_res.fuel_mass_cruise_kg:.1f} kg")
+    print(f"Avg cruise fuel flow:       {final_res.fuel_flow_cruise_kg_hr:.1f} kg/hr")
+    print(f"Objective J (lower=better): {final_res.objective_J:.3f}")
 
-    print("Generator Power (kW):", model.P_gen_elec_kW)
-    print("Takeoff metric:", model.x_to_metric)
-    print("Fuel mass (kg):", model.fuel_mass_cruise_kg)
-
+    # Sweep ranges
     wing_loading_vals = np.linspace(120, 300, 40)
     V_vals = np.linspace(90, 170, 40)
+    TW_vals = np.linspace(0.2, 0.9, 40)
 
-    X, Y, Z = sweep_2d(
-        params,
+    # Sweep A: Objective J
+    XA, YA, ZA = model.sweep_2d(
+        config,
         "wing_loading_kgm2",
         wing_loading_vals,
         "V_cruise",
         V_vals,
         "objective_J",
     )
-
-    contour_plot(
-        X,
-        Y,
-        Z,
-        "Wing loading (kg/m^2)",
-        "Cruise speed (m/s)",
-        "Objective J",
+    model.contour_plot(
+        XA,
+        YA,
+        ZA,
+        "Wing Loading (kg/m^2)",
+        "Cruise Speed (m/s)",
+        "Objective J (min x_to, max V, penalize m/S>250)",
+        limit_line=config.wing_loading_limit,
     )
+
+    # Sweep B: Required Gen Power
+    XB, YB, ZB = model.sweep_2d(
+        config,
+        "wing_loading_kgm2",
+        wing_loading_vals,
+        "V_cruise",
+        V_vals,
+        "P_gen_elec_kW",
+    )
+    model.contour_plot(
+        XB,
+        YB,
+        ZB,
+        "Wing Loading (kg/m^2)",
+        "Cruise Speed (m/s)",
+        "Required generator electrical power at cruise (kW)",
+        limit_line=config.wing_loading_limit,
+    )
+
+    # Sweep C: Takeoff Metric
+    XC, YC, ZC = model.sweep_2d(
+        config,
+        "wing_loading_kgm2",
+        wing_loading_vals,
+        "thrust_loading_TW",
+        TW_vals,
+        "x_to_metric",
+    )
+    model.contour_plot(
+        XC,
+        YC,
+        ZC,
+        "Wing Loading (kg/m^2)",
+        "Thrust Loading (T/W)",
+        "Takeoff metric x_to",
+        limit_line=config.wing_loading_limit,
+    )
+
+    plt.show()
