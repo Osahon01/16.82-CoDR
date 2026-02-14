@@ -24,16 +24,19 @@ class AircraftConfig:
     """Input parameters for the DEP sizing model."""
 
     # TODO: update inputs
+    # NOTE: try to avoid redefining vars for consistency
 
     range_m: float = 2500e3
-    V_cruise: float = 125.0
+    V_cruise: float = V_CRUISE
     alt_cruise_m: float = 10000.0 * 0.3048
 
     Cd: float = 0.02
     CLmax: float = 7.0
 
     # design vars
-    mass_kg: float = 4000.0
+    mass_kg: float = (
+        4000.0  # NOTE: would prefer ureg implementation. See CoDr for example
+    )
     wing_loading_kgm2: float = 180.0
     thrust_loading_TW: float = 0.4
 
@@ -77,6 +80,7 @@ class MissionResults:
 # Sizing model
 class DEPSizingModel:
     def isa_density(self, alt_m: float) -> float:
+        # NOTE: would prefer using ureg and ambiance class to avoid errors; update hard coded numbers if you have time
         R, T0, p0, L = 287.05287, 288.15, 101325.0, 0.0065
         alt_m = max(0.0, alt_m)
         if alt_m > 11000.0:
@@ -199,7 +203,7 @@ if __name__ == "__main__":
     config = AircraftConfig()
 
     # baseline calc
-    # Ran it twice - one to get the baseline x_to_ref, and once to get the normalized objective
+    # ran it twice - one to get the baseline x_to_ref, and once to get the normalized objective
     temp_res = model.compute_performance(config)
     final_res = model.compute_performance(config, x_to_ref=temp_res.x_to_metric)
 
