@@ -4,7 +4,7 @@ from ambiance import Atmosphere
 
 # (Assumed) Constants
 pi = np.pi
-AR = np.linspace(5, 15, 500)  # TODO: desired AR sweep range
+AR = np.linspace(5, 15, 500)
 e = 0.7
 
 # Aircraft parameters (Caravan-like)
