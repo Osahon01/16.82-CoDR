@@ -80,7 +80,7 @@ class MissionResults:
 # Sizing model
 class DEPSizingModel:
     def isa_density(self, alt_m: float) -> float:
-        # NOTE: would prefer using ureg and ambiance class to avoid errors; update hard coded numbers if you have time
+        # TODO: would prefer using ureg and ambiance class to avoid errors; update hard coded numbers to take in altitude (h)
         R, T0, p0, L = 287.05287, 288.15, 101325.0, 0.0065
         alt_m = max(0.0, alt_m)
         if alt_m > 11000.0:

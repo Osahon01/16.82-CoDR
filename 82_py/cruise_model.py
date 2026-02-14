@@ -4,8 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ambiance import Atmosphere
 from pint import UnitRegistry
-from takeoff_model import TakeoffModel
+from power_gen import AircraftConfig, DEPSizingModel
 from cruise_drag_model import parastic_drag
+from CoDR_equations import V_CRUISE
 
 # NOTE: Once takeoff code is published, I will read in inputs and update lift model accordingly
 # TODO: Biruk will add CD tradeoff study and conduct Cessna Caravan studies to calibrate a CD model (induced and parasitic)
@@ -42,13 +43,27 @@ class CruiseModel:
         # Current model will not account for viscous drag (not significant in cd calculations)
         return self.cd_induced() + self.cd_parasitic()
 
-    # TODO: Do we want cruise shaft power?
+    def power_cruise(self):
+        drag_tot = self.cd_total() * self.q * self.s_ref
+        return (
+            (drag_tot * self.v_cruise / AircraftConfig.eta_generator)
+            * AircraftConfig.power_margin
+            * ureg("W").to("kW")
+        )
+
+    def time_cruise(self):
+        return DEPSizingModel().compute_performance(
+            cfg=AircraftConfig()
+        ).cruise_time_hr * ureg("hr")  # does't go through obj fn; uses baseline params
+
+    def energy_cruise(self):
+        return (self.power_cruise() * self.time_cruise()).to("MWh")
 
 
 # Runner script
 if __name__ == "__main__":
     # Design Variables
-    AR = np.linspace(5, 15, 100)  # TODO: desired AR sweep range
+    AR = np.linspace(5, 15, V_CRUISE_VEC.shape[0])  # TODO: desired AR sweep range
     e = 0.7  # TODO: determine if this value is a reasonable guess
     Cd0 = parastic_drag()
 
@@ -81,13 +96,13 @@ if __name__ == "__main__":
 
     # TODO: Update with actual values by calling relevant class
     cruise_cls = CruiseModel(
-        s_ref=10,
-        weight=1000,
-        v_cruise=100,
-        h_cruise=3000,
+        s_ref=10,  # TODO: update to varied model
+        weight=1000,  # TODO: update to varied model
+        v_cruise=V_CRUISE,  # # TODO: update to varied model; # should sweep over an array of cruise values
+        h_cruise=AircraftConfig.alt_cruise_m,
         AR=AR,
         e=e,
-        thrust=5000,
+        thrust=5000,  # TODO: update to varied model
         Cd0=Cd0,
     )
 
