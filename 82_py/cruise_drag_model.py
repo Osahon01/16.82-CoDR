@@ -8,35 +8,37 @@ AR = 9.702
 e = 0.7
 
 # Aircraft parameters (Caravan-like)
-W = 39000        # N
-S = 25.96        # m^2
-h = 3000         # meters (~10,000 ft)
+W = 39000  # N
+S = 25.96  # m^2
+h = 3000  # meters (~10,000 ft)
 
 # Density as a function of atmosphere
 atm = Atmosphere(h)
 rho = atm.density[0]
 
 # Velocity sweep (m/s)
-V = np.linspace(40, 120, 500) # Note: Cessna Caravan has cruise speed of about 96 m/s
+V = np.linspace(40, 120, 500)  # Note: Cessna Caravan has cruise speed of about 96 m/s
 q = 0.5 * rho * V**2
-CL = W / (q * S) # Required CL for level flight
+CL = W / (q * S)  # Required CL for level flight
 
 
 # Caravan Parastic Drag Calc
 def parastic_drag():
     S_caravan = 25.96
     AR_caravan = 9.702
-    P_caravan = 503e3 # W
-    eta_prop = 0.8 # assumed
-    V_cruise_caravan = 96 # m/s
+    P_caravan = 503e3  # W
+    eta_prop = 0.8  # assumed
+    V_cruise_caravan = 96  # m/s
     D_caravan = P_caravan * eta_prop / V_cruise_caravan
-    q_caravan = 1/2 * rho * V_cruise_caravan**2
+    q_caravan = 1 / 2 * rho * V_cruise_caravan**2
 
-    Cl_total_caravan = 35600/ (q_caravan*S_caravan)
+    Cl_total_caravan = 35600 / (q_caravan * S_caravan)
     Cd_total_caravan = D_caravan / (q_caravan * S_caravan)
-    CD_i_caravan = Cl_total_caravan**2 / (pi*AR_caravan*e)
+    CD_i_caravan = Cl_total_caravan**2 / (pi * AR_caravan * e)
     CD0 = Cd_total_caravan - CD_i_caravan
     return CD0
+
+
 CD0 = parastic_drag()
 
 
@@ -50,7 +52,7 @@ D_total = D_i + D_p
 # Plot
 PLOT = False
 if PLOT:
-    plt.figure(figsize=(8,6))
+    plt.figure(figsize=(8, 6))
     plt.plot(V, D_i, label="Induced Drag")
     plt.plot(V, D_p, label="Parasite Drag")
     plt.plot(V, D_total, label="Total Drag", linewidth=2)
@@ -61,7 +63,8 @@ if PLOT:
     plt.grid()
     plt.show()
 
-    # Find minimum drag speed
-    min_index = np.argmin(D_total)
-    print("Velocity at Minimum Drag:", V[min_index], "m/s")
-
+# Find minimum drag speed
+min_index = np.argmin(D_total)
+print(
+    f"{40 * '='}\nVelocity at Minimum Drag: {round(V[min_index], 2)}, m/s\n{40 * '='}"
+)
