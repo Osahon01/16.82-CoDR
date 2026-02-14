@@ -25,7 +25,6 @@ class AircraftConfig:
 
     # TODO: update inputs
 
-    g0: float = g
     range_m: float = 2500e3
     V_cruise: float = 125.0
     alt_cruise_m: float = 10000.0 * 0.3048
@@ -78,12 +77,12 @@ class MissionResults:
 # Sizing model
 class DEPSizingModel:
     def isa_density(self, alt_m: float) -> float:
-        g0, R, T0, p0, L = 9.80665, 287.05287, 288.15, 101325.0, 0.0065
+        R, T0, p0, L = 287.05287, 288.15, 101325.0, 0.0065
         alt_m = max(0.0, alt_m)
         if alt_m > 11000.0:
             raise ValueError("isa_density only implemented up to 11,000 m")
         T = T0 - L * alt_m
-        p = p0 * (T / T0) ** (g0 / (R * L))
+        p = p0 * (T / T0) ** (g / (R * L))
         return p / (R * T)
 
     def compute_performance(
@@ -109,10 +108,10 @@ class DEPSizingModel:
         res.P_gen_sized_kW = res.P_gen_elec_kW * cfg.power_margin
 
         # takeoff metric
-        W_over_S = cfg.wing_loading_kgm2 * cfg.g0
+        W_over_S = cfg.wing_loading_kgm2 * g
         res.x_to_metric = (
             (W_over_S / max(cfg.thrust_loading_TW, 1e-12))
-            * (1.0 / (cfg.rho_to_kgm3 * cfg.g0))
+            * (1.0 / (cfg.rho_to_kgm3 * g))
             * (1.0 / max(cfg.CLmax, 1e-12))
         )
 
