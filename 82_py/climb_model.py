@@ -1,6 +1,7 @@
 import math
 import numpy as np
 
+
 class ClimbModel:
     """
     Simple climb model with constant-density assumption evaluated at h_cruise.
@@ -40,7 +41,7 @@ class ClimbModel:
         epsilon_battery,
         h_cruise,
         S,
-        v
+        v,
     ):
         self.T_W = T_W
         self.C_D = C_D
@@ -75,9 +76,6 @@ class ClimbModel:
         rho = p / (R * T)
         return rho
 
-
-
-
     def combined_thrust_from_power(self, v):
         """
         Thrust from combined generator and battery power:
@@ -86,7 +84,8 @@ class ClimbModel:
         if v <= 0:
             raise ValueError("Velocity must be positive.")
         P_eff = (
-            self.P_generator * self.eta_generator + self.battery_power_required() * self.eta_battery
+            self.P_generator * self.eta_generator
+            + self.battery_power_required() * self.eta_battery
         )
         return P_eff / v
 
@@ -117,18 +116,18 @@ class ClimbModel:
         v = self.v
         W = self.S / self.S_W
         rho = self.rho_isa()
-        q = 0.5*rho*v**2
-        D = self.C_D * (q*self.S)
+        q = 0.5 * rho * v**2
+        D = self.C_D * (q * self.S)
 
-        P_drag = D*v
-        P_climb = W*v*np.sin(self.gamma)
+        P_drag = D * v
+        P_climb = W * v * np.sin(self.gamma)
 
         return P_drag + P_climb
-    
+
     def battery_power_required(self):
         """
-        Calculates required battery power for climb if using all of it 
-        
+        Calculates required battery power for climb if using all of it
+
         :param self: Description
         """
         P_req = self.required_total_power()
@@ -140,20 +139,20 @@ class ClimbModel:
             return 0.0
 
         return P_bat_eff / self.eta_battery
-    
+
     def battery_energy_required(self):
         """
-        Calculates required battery energy for climb if using all of it 
-        
+        Calculates required battery energy for climb if using all of it
+
         :param self: Description
         """
         P_bat = self.battery_power_required() * self.time_of_climb()
         return P_bat
-    
+
     def battery_mass_for_climb(self):
         """
-        Calculates required battery mass for climb if using all of it 
-        
+        Calculates required battery mass for climb if using all of it
+
         :param self: Description
         """
         if self.epsilon_battery <= 0:
@@ -184,7 +183,7 @@ class ClimbModel:
 
 # EXAMPLE USAGE
 
-'''if __name__ == "__main__":
+"""if __name__ == "__main__":
     gamma = math.radians(5.0)
 
     # Assumed constants 
@@ -210,6 +209,6 @@ class ClimbModel:
     print(f"Climb velocity: {V} m/s")
     print(f"Time to climb: {model.time_of_climb()/60:.2f} min")
     print(f"Batter Power required: {model.battery_power_required()} W")
-    print(f"Battery mass required: {model.get_m_battery():.2f} kg")'''
+    print(f"Battery mass required: {model.get_m_battery():.2f} kg")"""
 
 # test comment
