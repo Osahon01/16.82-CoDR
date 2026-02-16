@@ -5,6 +5,8 @@ from ambiance import Atmosphere
 
 # Our models imported
 from cruise_model import CruiseModel
+from cruise_drag_model import parastic_drag
+from power_gen import AircraftConfig
 from takeoff_model import TakeoffModel
 
 # Vectors to sweep over
@@ -25,10 +27,9 @@ eta_v_prop = 0.7
 eta_add_prop = 0.7
 epsilon_battery = 250.0 * 3600.0  # 250 Wh/kg converted to J/kg
 
-# Takeoff Model Constants
-aoa = 0
+# Cruise Model Constants
 e = 0.8
-CD0 = 0.0335 # Hard coded from cruise drag model for now, but will need to be part of a loop eventually
+CD0 = parastic_drag() # Hard coded from cruise drag model for now, but will need to be part of a loop eventually
 
 class Airplane:
     def __init__(
@@ -40,20 +41,25 @@ class Airplane:
         self.AR = AR
         self.S = W / S_W  # Wing area (m^2)
         self.T = W * T_W  # Takeoff thrust (N)
-
+    
     def run_cruise_model(self):
         cruise = CruiseModel(
-            h_cruise=h_cruise,
             s_ref=self.S,
-            weight=self.W,
+            weight=W,
             v_cruise=self.v_cruise,
             h_cruise=h_cruise,
-            aoa=aoa, 
-            aspect_ratio=self.AR,
+            AR=self.AR,
             e=e,
-            thrust=None,
-            Cd0=0.03
+            Cd0 = CD0
         )
-        return cruise
-
+        drag = cruise.drag_total()
+        CD_total = cruise.cd_total()
+        return drag, CD_total
+    
+    def run_power_model(self):
+        power = None
+        pass
+    
+drela_forehead = Airplane(v_cruise=80, AR=10)
+print(f'Cruise model test: {drela_forehead.run_cruise_model()}')
     
