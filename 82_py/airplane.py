@@ -6,7 +6,7 @@ from ambiance import Atmosphere
 # Our models imported
 from cruise_model import CruiseModel
 from cruise_drag_model import parastic_drag
-from power_gen import AircraftConfig
+from power_gen import AircraftConfig, MissionResults
 from takeoff_model import TakeoffModel
 
 # Vectors to sweep over
@@ -14,8 +14,8 @@ v_cruises = np.linspace(40, 120, 10)  # m/s
 ARs = np.linspace(5, 15, 10)  # Aspect ratio sweep
 
 # Design parameters (FIXED)
-CLTO = 10
-CDTO = 1
+CLTO = 10 # Dalton will tell us
+CDTO = 1 # Dalton
 W = 19000 * 4.445  # N (converted from lbs)
 S_W = 50  # kg/m^2
 T_W = 0.3
@@ -30,6 +30,10 @@ epsilon_battery = 250.0 * 3600.0  # 250 Wh/kg converted to J/kg
 # Cruise Model Constants
 e = 0.8
 CD0 = parastic_drag() # Hard coded from cruise drag model for now, but will need to be part of a loop eventually
+
+# Power Model
+rho_cruise = Atmosphere(h=h_cruise).density
+
 
 class Airplane:
     def __init__(
@@ -57,9 +61,10 @@ class Airplane:
         return drag, CD_total
     
     def run_power_model(self):
-        power = None
+        power = MissionResults(rho_cruise, self.S, self.T, W, self.v_cruise, h_cruise, self.AR, e, CD0, eta_v_prop, eta_add_prop, epsilon_battery)
+        power.P_generator = power_required_for_cruise(self.v_cruise, self.AR)
         pass
     
 drela_forehead = Airplane(v_cruise=80, AR=10)
-print(f'Cruise model test: {drela_forehead.run_cruise_model()}')
+# print(f'Cruise model test: {drela_forehead.run_cruise_model()}')
     
