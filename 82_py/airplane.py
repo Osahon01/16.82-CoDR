@@ -73,6 +73,11 @@ class Airplane:
         )
         power.P_generator = power_required_for_cruise(self.v_cruise, self.AR)
         pass
+p_gen
+p_bat
+m_bat
+m_gen
+time of flight
 
 
 drela_forehead = Airplane(v_cruise=80, AR=10)
