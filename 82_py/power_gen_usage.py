@@ -36,8 +36,6 @@ class AircraftConfig:
     # Fuel/APU (Jet-A LHV ~42 MJ/kg)
     eta_apu_overall: float = 0.30
     LHV_MJ_per_kg: float = 42.0 * ureg("MJ/kg")
-
-    rho: float = Atmosphere(h=0).density[0]  # Sea level standard
     V_ref: float = V_CRUISE
 
 
