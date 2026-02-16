@@ -15,7 +15,7 @@ ureg = UnitRegistry()
 
 
 class CruiseModel:
-    def __init__(self, s_ref, weight, v_cruise, h_cruise, AR, e, thrust, Cd0) -> None:
+    def __init__(self, s_ref, weight, v_cruise, h_cruise, AR, e, Cd0) -> None:
         self.atm = Atmosphere(h=h_cruise)
         self.s_ref = s_ref
         self.weight = weight  # newtons
@@ -25,7 +25,7 @@ class CruiseModel:
         self.AR = AR
         self.e = e
         self.q = 0.5 * self.density * (self.v_cruise**2)
-        self.thrust = thrust
+        # self.thrust = thrust
         self.Cd0 = Cd0
 
     def cl(self):
@@ -43,21 +43,8 @@ class CruiseModel:
         # Current model will not account for viscous drag (not significant in cd calculations)
         return self.cd_induced() + self.cd_parasitic()
 
-    def power_cruise(self):
-        drag_tot = self.cd_total() * self.q * self.s_ref
-        return (
-            (drag_tot * self.v_cruise / AircraftConfig.eta_generator)
-            * AircraftConfig.power_margin
-            * ureg("W").to("kW")
-        )
-
-    def time_cruise(self):
-        return DEPSizingModel().compute_performance(
-            cfg=AircraftConfig()
-        ).cruise_time_hr * ureg("hr")  # does't go through obj fn; uses baseline params
-
-    def energy_cruise(self):
-        return (self.power_cruise() * self.time_cruise()).to("MWh")
+    def drag_total(self):
+        return self.cd_total() * self.q * self.s_ref
 
 
 # Runner script
@@ -65,33 +52,6 @@ if __name__ == "__main__":
     # Design Variables
     e = 0.7  # TODO: determine if this value is a reasonable guess
     Cd0 = parastic_drag()
-
-    ## if TakeoffModel used:
-    #     # Takeoff Model values
-    #     T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0 = [10,10,10,10,10,10,10]
-    #     takeoff_cls = Takeoff_model(
-    #         T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0, AR=AR, e=e
-    #     )  # TODO: parameters need to be defined somewhere
-    #     s_ref = takeoff_cls.S
-    #     weight = takeoff_cls.weight  # TODO: Need this to be implemented in takeoff model; function of time or altitude
-
-    #     # End of takeoff (eot) parameters; TODO: Need this to be implemented in takeoff model
-    #     v_cruise = takeoff_cls.v_eot  # assumed constant
-    #     h_in = takeoff_cls.h_eot  # NOTE: Ensure that term is in meters
-    #     h_end = 10000 * ureg("ft").to_base_units().magnitude
-    #     h_cruise = np.linspace(h_in, h_end) if h_end > h_in else np.array(h_in)
-    #     thrust = takeoff_cls.get_T_cruise(v_cruise)
-
-    #     cruise_cls = CruiseModel(
-    #         s_ref,
-    #         weight,
-    #         v_cruise,
-    #         h_cruise,
-    #         AR=AR,
-    #         e=e,
-    #         thrust=thrust,
-    #         Cd0=Cd0
-    #     )
 
     # TODO: Update with actual values by calling relevant class
     cruise_cls = CruiseModel(
@@ -101,7 +61,6 @@ if __name__ == "__main__":
         h_cruise=AircraftConfig.alt_cruise_m,
         AR=AR,
         e=e,
-        thrust=5000,  # TODO: update to varied model
         Cd0=Cd0,
     )
 
@@ -110,17 +69,6 @@ if __name__ == "__main__":
 
     PLOT = True
     if PLOT:
-        # plt.figure()
-        # plt.plot(AR, cruise_cls.cd_parasitic(), color="red", label='CD_par')
-        # plt.plot(AR, cruise_cls.cd_induced(), color="blue", label='CD_ind')
-        # plt.plot(AR, cruise_cls.cd_total(), color="black", label='CD_tot')
-        # plt.title("CD vs AR")
-        # plt.xlabel("AR")
-        # plt.ylabel("CD")
-        # plt.legend()
-        # plt.grid()
-        # plt.show()
-
         plt.figure()
         plt.plot(AR, L_over_D)
         plt.xlabel("Aspect Ratio")
