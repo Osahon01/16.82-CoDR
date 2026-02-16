@@ -64,6 +64,13 @@ class Airplane:
         power = MissionResults(rho_cruise, self.S, self.T, W, self.v_cruise, h_cruise, self.AR, e, CD0, eta_v_prop, eta_add_prop, epsilon_battery)
         power.P_generator = power_required_for_cruise(self.v_cruise, self.AR)
         pass
+
+    def run_takeoff_model(self):
+        takeoff = TakeoffModel(T_W_takeoff=T_W, W_S=S_W, W=W, P_shaft_TO=power.P_generator, CLTO=CLTO, CDTO=CDTO, CD0=CD0, AR=self.AR, e=e)
+        takeoff_distance = takeoff.takeoff_distance()
+        return takeoff_distance
+
+
     
 drela_forehead = Airplane(v_cruise=80, AR=10)
 # print(f'Cruise model test: {drela_forehead.run_cruise_model()}')
