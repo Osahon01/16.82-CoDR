@@ -6,7 +6,7 @@ from ambiance import Atmosphere
 # Our models imported
 from cruise_model import CruiseModel
 from cruise_drag_model import parastic_drag
-from power_gen import AircraftConfig, MissionResults
+from power_gen_usage import AircraftConfig, MissionResults
 from takeoff_model import TakeoffModel
 
 # Vectors to sweep over
@@ -58,6 +58,19 @@ class Airplane:
 
     def run_power_model(self):
         power = MissionResults(
+    rho_cruise_kgm3: float = 0,
+    wing_area_m2: float = 0,
+    thrust_required_N: float = 0,
+    P_gen_elec_kW: float = 0,
+    P_gen_sized_kW: float = 0,
+    x_to_metric: float = 0,
+    cruise_time_hr: float = 0,
+    cruise_energy_MWh: float = 0,
+    fuel_mass_cruise_kg: float = 0,
+    fuel_flow_cruise_kg_hr: float = 0
+)
+        
+        MissionResults(
             rho_cruise,
             self.S,
             self.T,
@@ -73,11 +86,13 @@ class Airplane:
         )
         power.P_generator = power_required_for_cruise(self.v_cruise, self.AR)
         pass
+
+# Conrads climb --> # p_bat, # m_bat
+# Zach's
 p_gen
-p_bat
-m_bat
 m_gen
 time of flight
+Cruise fuel mass
 
 
 drela_forehead = Airplane(v_cruise=80, AR=10)
