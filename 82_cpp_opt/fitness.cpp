@@ -9,23 +9,25 @@
 using namespace pagmo;
 
 vector_double::size_type problem_fvd::get_nec() const{
-    return 0;
+    return 2;
 }
 vector_double::size_type problem_fvd::get_nic() const{
-    return 0;
+    return 1;
 }
 
 std::pair<vector_double, vector_double> problem_fvd::get_bounds() const{
-    vector_double lb = {};
-    vector_double ub = {};
+    vector_double lb = {1500.,0.,10.,3.,0.,-5.,0.,30.,0.,0.};
+    vector_double ub = {5000.,1.,50.,15.,50000.,20.,1.,60.,20.,1.4};
     std::pair<vector_double, vector_double> ret(lb,ub);
     return ret;
 }
 
 // Calculates the fitness function and associated constraints,
 // in the form {fitness, eq..., ineq...}
+// All units in radians
 vector_double problem_fvd::fitness(const vector_double &x) const{
-    
+
+
     try{
 
         // This is a helpful block of code. Put it immediately after a value prone to mishaps
@@ -37,16 +39,50 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         // }
 
         auto m = x[0];
-        auto f = x[1];
+        auto f = x[1]; // Low fidelity strategy - upper bound as 0.4
         auto S = x[2];
         auto AR = x[3];
         auto T_TO = x[4];
         auto alpha_TO = x[5];
-        auto h_d = x[6];
-        auto delta_F = x[7];
+        auto h_d = x[6]; // Span-averaged disk height
+        auto delta_F_TO = x[7];
+        auto CL_TO = x[8];
+        auto CL_cruise = x[9];
+        // Calculate generally useful stuff, avoid recalculation
+        double b = std::pow(AR*S,0.5);
+        double c = b/AR;
+        double A_d = b*h_d;
+        double S_wet = S*(1.2) + 69.;// The 69 is a rough estimate for the fusl area of the EL9
+        // Calculate TO velocity and required jet velocity to make thrust, and finally delta CJ
+        double V_TO = std::pow((2*m*g)/(S*CL_TO*rho_0k),0.5);
+        double Vj_TO = std::pow((2*T_TO)/(rho_0k*A_d)+V_TO*V_TO,0.5);
+        double delta_CJ_TO = ((2*h_d)/c)*((Vj_TO/V_TO)*(Vj_TO/V_TO)-1);
+        // Use models to get the blown CL and enforce closure via residual
+        double CL_TO_surr = blown_CL_surr(alpha_TO,delta_CJ_TO,h_d / S, delta_F_TO);
+        double resid_CL_TO = CL_TO_surr - CL_TO;
+        double eta_fr_TO = (2*V_TO)/(V_TO+Vj_TO);
+        double P_TO_shaft = (T_TO*V_TO)/eta_fr_TO;
+
+        double x_TO = (m*m*g)/(T_TO*S*rho_0k*CL_TO);
+
+        double q_cruise = (m*g)/(S*CL_cruise);
+        double V_cruise = std::pow((2*q_cruise)/rho_10k,0.5);
+        double D_cruise = S_wet*Cd_v*q_cruise + (CL_cruise*CL_cruise)/(M_PI*spaneff*AR);
+        double LD_cruise = (m*g)/(D_cruise);
+        double Vj_cruise = std::pow((2*D_cruise)/(rho_10k*A_d)+V_cruise*V_cruise,0.5);
+        double eta_fr_cruise = (2*V_cruise)/(Vj_cruise+V_cruise);
+        double Range = ((h_avgas*eta_gen*eta_fr_cruise*0.95)/g)*LD_cruise*std::log(1./f);
+
+        double con_min_range = 2420000 - Range;
+
+        double m_struc = 1000. * (S_wet / 140.);
+        double m_prop = P_TO_shaft / P_spec_prop;
+        double m_calc_nofuel = m_struc+m_prop+m_pax;
+        double m_calc = m_calc_nofuel / (1-f);
+        double resid_mass = m_calc - m;
 
         // Package objective and constraint values
-        vector_double ret = {};
+        vector_double ret = {x_TO,resid_CL_TO,resid_mass,con_min_range};
         // A physically impossible situation will usually result in a bunch of NaNs,
         // and bad inputs might give Inf due to division by zero.
         // If this happens, return a big penalty
@@ -62,27 +98,30 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
     }
 }
 
-double problem_fvd::blown_Cl_surr(double alpha, double Delta_CJ, double Ad_S, double delta_F) const{
-    auto delta_J = delta_J_surr(Ad_S, delta_F);
+// Surrogate model for CL in the blown lift condition
+double problem_fvd::blown_CL_surr(double alpha, double Delta_CJ, double hd_S, double delta_F) const{
+    auto delta_J = delta_J_surr(hd_S, delta_F);
     double CL = X1 + X2*delta_J*X3*alpha
                 + std::pow(Delta_CJ,0.5)*(X4*delta_J+X5*alpha*X6)
                 + Delta_CJ*(X7*delta_J+X8*alpha*X9);
     return CL;
 }
 
-double problem_fvd::delta_J_surr(double Ad_S, double delta_F) const{
-    //Surrogate model for flap efficiency as a function of flap deflection and 
-    //Nondimensional jet wash height
-    double eta_40 = 1./(f1_40*std::exp(f2_40*(Ad_S))+f3_40*std::exp(f4_40*(Ad_S)));
-    double eta_60 = 1./(f1_60*std::exp(f2_60*(Ad_S))+f3_60*std::exp(f4_60*(Ad_S)));
+// Surrogate model for flap efficiency as a function of flap deflection and 
+// nondimensional jet wash height
+double problem_fvd::delta_J_surr(double hd_S, double delta_F) const{
+
+    double eta_40 = 1./(f1_40*std::exp(f2_40*(hd_S))+f3_40*std::exp(f4_40*(hd_S)));
+    double eta_60 = 1./(f1_60*std::exp(f2_60*(hd_S))+f3_60*std::exp(f4_60*(hd_S)));
     double k_b = delta_F/20. - 2.;
     if (delta_F<40){
-        return eta_40;
+        return eta_40*delta_F;
     }
     if (delta_F>60){
-        return eta_60;
+        return eta_60*delta_F;
     }
-    return eta_40 + k_b*(eta_60 - eta_40);
+    // Simple linear interpolation since the one in the paper is ass
+    return (eta_40 + k_b*(eta_60 - eta_40))*delta_F;
 }
 
 // Checks if anything in a vector_double is inf or nan

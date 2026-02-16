@@ -13,6 +13,11 @@ struct problem_fvd{
         // Non-varying parameters
         // Define things like environment parameters and compenent efficiencies here
         static constexpr double g = 9.8066;
+        static constexpr double rho_0k = 1.2;
+
+        static constexpr double rho_10k = 0.9;
+
+        static constexpr double Cd_v = 0.01;
         // Blown aero coefficients surrogate
         static constexpr double X1 = 0.1856;
         static constexpr double X2 = 0.0334;
@@ -35,6 +40,15 @@ struct problem_fvd{
         static constexpr double f4_60 = 12.446;
 
 
+        static constexpr double spaneff = 0.95;
+
+        static constexpr double eta_gen = 0.2;
+        static constexpr double P_spec_prop = 6000.;
+
+        static constexpr double m_pax = 900.;
+        static constexpr double h_avgas = 43.5e+6;
+
+
 
         // Interface methods, do not change
         vector_double::size_type get_nec() const;
@@ -45,8 +59,8 @@ struct problem_fvd{
     private: 
         // Helper methods that other classes shouldn't be using go here
         bool invalid_ret(vector_double &x) const;
-        double blown_Cl_surr(double alpha, double Delta_CJ,double Ad_S, double delta_F) const;
-        double delta_J_surr(double Ad_S, double delta_F) const;
+        double blown_CL_surr(double alpha, double Delta_CJ,double hd_S, double delta_F) const;
+        double delta_J_surr(double hd_S, double delta_F) const;
 };
 
 #endif
