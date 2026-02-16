@@ -13,9 +13,6 @@ ureg = UnitRegistry()  # keeps track of units
 class AircraftConfig:
     """Input parameters for the DEP sizing model."""
 
-    # TODO: update inputs
-    # NOTE: try to avoid redefining vars for consistency
-
     range_m: float = 2500e3 * ureg("m")
     V_cruise: float = V_CRUISE * ureg("m/s")
     alt_cruise_m: float = 3048.0 * ureg("m")
