@@ -2,22 +2,24 @@
 import math
 import numpy as np
 from ambiance import Atmosphere
+from power_gen_usage import ureg  # avoids instance issues
 
 # Our models imported
 from cruise_model import CruiseModel
 from cruise_drag_model import parastic_drag
-from power_gen_usage import AircraftConfig, MissionResults
+from power_gen_usage import AircraftConfig, DEPSizingModel
 from climb_model import ClimbModel
 from takeoff_model import TakeoffModel
 from structural_wing_model import StructuralWingModel
 
 # Design parameters (FIXED)
+RANGE = 2500000 * ureg("m")
 CLTO = 10  # Dalton will tell us
 CDTO = 1  # Dalton
 W = 12500 * 4.445  # N (converted from lbs)
 S_W = 50  # kg/m^2
 T_W = 0.3
-h_cruise = 3048.0  # 10,000 ft in meters
+h_cruise = 3048.0 * ureg("m")  # 10,000 ft in meters
 gamma = math.radians(15.0)  # Climb angle in radians
 eta_battery = 0.95
 eta_generator = 0.92
@@ -45,7 +47,7 @@ tau_allow_design = 80e6  # Pa, allowable shear stress for design (e.g., carbon f
 
 class Airplane:
     def __init__(self, v_cruise, AR):
-        self.v_cruise = v_cruise
+        self.v_cruise = v_cruise * ureg("m/s")
         self.AR = AR
         self.S = W / S_W  # Wing area (m^2)
         self.T = W * T_W  # Takeoff thrust (N)
@@ -65,34 +67,33 @@ class Airplane:
         return drag, CD_total
 
     def run_power_model(self):
-        power =MissionResults(rho_cruise_kgm3=rho_cruise, wing_area_m2=self.S, thrust_required_N=self.T)
-        
-        # power =MissionResults(rho_cruise_kgm3=rho_cruise, 
-        #                       wing_area_m2=self.S, 
-        #                       thrust_required_N=self.T, 
-        #                       P_gen_elec_kW: float = 0, 
-        #                       P_gen_sized_kW: float = 0, 
-        #                       cruise_time_hr: float = 0, 
-        #                       cruise_energy_MWh: float = 0, 
-        #                       fuel_mass_cruise_kg: float = 0, 
-        #                       fuel_flow_cruise_kg_hr: float = 0)
-        
-        MissionResults(
-            rho_cruise,
-            self.S,
-            self.T,
-            W,
-            self.v_cruise,
-            h_cruise,
-            self.AR,
-            e,
-            CD0,
-            eta_v_prop,
-            eta_add_prop,
-            epsilon_battery,
+        cfg = AircraftConfig(
+            range_m=RANGE,
+            V_cruise=self.v_cruise,
+            alt_cruise_m=h_cruise,
+            Cd=0.02,
+            CLmax=7,
+            mass_kg=4000 * ureg("kg"),
+            wing_loading_kgm2=180 * ureg("kg/m^2"),
+            thrust_loading_TW=0.4,
+            eta_prop=0.85,
+            eta_motor=0.95,
+            eta_inverter=0.98,
+            eta_gearbox=1,
+            eta_generator=0.95,
+            power_margin=1.15,
+            eta_apu_overall=0.3,
+            LHV_MJ_per_kg=42 * ureg("MJ/kg"),
         )
-        power.P_generator = power_required_for_cruise(self.v_cruise, self.AR)
-        pass
+
+        power_cls = DEPSizingModel.compute_performance(cfg)
+
+        return (
+            power_cls.P_gen_elec_kW,
+            power_cls.fuel_mass_cruise_kg,
+            power_cls.cruise_time_hr,
+            power_cls.gen_mass,
+        )
 
     def run_climb_model(self, p_gen):
         climb = ClimbModel(
@@ -144,13 +145,6 @@ class Airplane:
         spar_mass, skin_mass = self.run_wing_structural_model(L_max)
         masses = np.array([m_gen, m_bat, spar_mass, skin_mass])
         return x_TO, masses
-
-# Conrads climb --> # p_bat, # m_bat
-# Zach's    
-p_gen
-m_gen
-time of flight
-Cruise fuel mass
 
 
 drela_forehead = Airplane(v_cruise=80, AR=10)

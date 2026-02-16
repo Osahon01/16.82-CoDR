@@ -51,6 +51,7 @@ class MissionResults:
     cruise_energy_MWh: float = 0.0
     fuel_mass_cruise_kg: float = 0.0
     fuel_flow_cruise_kg_hr: float = 0.0
+    gen_mass: float = 0.0
 
 
 # Sizing model
@@ -91,7 +92,10 @@ class DEPSizingModel:
         mission_cls.fuel_flow_cruise_kg_hr = mission_cls.fuel_mass_cruise_kg / (
             mission_cls.cruise_time_hr
         )
-
+        # assumes linear weight scaling from this: https://evtol.news/news/hard-core-hybrids
+        mission_cls.gen_mass = (mission_cls.P_gen_sized_kW) * (
+            295 * ureg("kg") / (370 * ureg("kW"))
+        )
         return mission_cls
 
 
@@ -108,6 +112,7 @@ if __name__ == "__main__":
     print(f"Cruise thrust required:     {final_res.thrust_required_N:.0f}")
     print(f"Generator (cruise) output:  {final_res.P_gen_elec_kW:.1f}")
     print(f"Generator (sized) rating:   {final_res.P_gen_sized_kW:.1f}")
+    print(f"Generator Mass:             {final_res.gen_mass:.1f}")
     print(f"Cruise time:                {final_res.cruise_time_hr:.2f}")
     print(f"Cruise energy:              {final_res.cruise_energy_MWh:.3f}")
     print(f"Cruise fuel mass:           {final_res.fuel_mass_cruise_kg:.1f}")
