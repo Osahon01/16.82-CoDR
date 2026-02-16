@@ -18,12 +18,10 @@ class AircraftConfig:
     alt_cruise_m: float = 3048.0 * ureg("m")
 
     Cd: float = 0.02
-    CLmax: float = 7.0
 
     # design vars
     mass_kg: float = 4000.0 * ureg("kg")
     wing_loading_kgm2: float = 180.0 * ureg("kg/m^2")
-    thrust_loading_TW: float = 0.4
 
     # efficiencies & margin
     eta_prop: float = 0.85
