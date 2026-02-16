@@ -13,7 +13,7 @@ ureg = UnitRegistry()
 
 class CruiseModel:
     def __init__(
-        self, s_ref, weight, v_cruise, h_cruise, aoa, aspect_ratio, e, thrust, Cd0, AR
+        self, s_ref, weight, v_cruise, h_cruise, aoa, e, thrust, Cd0, AR
     ) -> None:
         self.atm = Atmosphere(h=h_cruise)
         self.s_ref = s_ref
@@ -22,7 +22,6 @@ class CruiseModel:
         self.h_cruise = h_cruise
         self.density = self.atm.density
         self.aoa = aoa  # radians
-        self.aspect_ratio = aspect_ratio
         self.e = e
         self.q = 0.5 * self.density * (self.v_cruise**2)
         self.thrust = thrust
@@ -63,7 +62,7 @@ if __name__ == "__main__":
     Cd0 = 0.03 # TODO: For now, I'm assuming this value based on similar aircraft. As stated earlier
                # we need to decide if this is a cruise team issue or takeoff team
     T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0 = ...
-    takeoff_cls = Takeoff_model(
+    takeoff_cls = TakeoffModel(
         T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0, AR=aspect_ratio, e=e
     )  # TODO: parameters need to be defined somewhere
     s_ref = takeoff_cls.S
