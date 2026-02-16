@@ -212,8 +212,14 @@ if __name__ == "__main__":
     print(f"Batter Power required: {model.battery_power_required()} W")
     print(f"Battery mass required: {model.get_m_battery():.2f} kg")
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 # test comment
+=======
+print(2)
+print(5)
+print(9)
+>>>>>>> 9de0497 (test)
 =======
 print(2)
 print(5)
