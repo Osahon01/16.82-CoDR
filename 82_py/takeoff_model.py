@@ -7,7 +7,7 @@ from ambiance import Atmosphere
 
 # Define the Takeoff model class
 class TakeoffModel:
-    def __init__(self, T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0, AR, e):
+    def __init__(self, T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO): # , CD0, AR, e):
         # Inputs (knowns)
         self.T_W_takeoff = T_W_takeoff
         self.W_S = W_S
@@ -15,9 +15,9 @@ class TakeoffModel:
         self.P_shaft_TO = P_shaft_TO
         self.CLTO = CLTO
         self.CDTO = CDTO
-        self.CD0 = CD0  # Parasitic drag coefficient
-        self.AR = AR  # Aspect ratio
-        self.e = e  # Oswald efficiency factor
+        # self.CD0 = CD0  # Parasitic drag coefficient
+        # self.AR = AR  # Aspect ratio
+        # self.e = e  # Oswald efficiency factor
 
         # Constants
         self.g = g  # Acceleration due to gravity (m/s^2)

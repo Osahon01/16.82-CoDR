@@ -141,13 +141,13 @@ class ClimbModel:
 
 # EXAMPLE USAGE
 
-"""if __name__ == "__main__":
+if __name__ == "__main__":
     gamma = math.radians(5.0)
 
     # 250 Wh/kg converted to J/kg
     epsilon_battery = 250.0 * 3600.0
 
-    model = climb_model(
+    model = ClimbModel(
         T_W=0.30,
         C_D=0.03,
         S_W=1.2e-3,
@@ -162,4 +162,4 @@ class ClimbModel:
 
     print(f"Climb velocity: {model.solve_velocity():.2f} m/s")
     print(f"Time to climb: {model.time_of_climb()/60:.2f} min")
-    print(f"Battery mass required: {model.get_m_battery():.2f} kg")"""
+    print(f"Battery mass required: {model.get_m_battery():.2f} kg")
