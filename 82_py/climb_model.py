@@ -1,5 +1,5 @@
 import math
-
+import numpy as np
 
 class ClimbModel:
     """
@@ -36,22 +36,24 @@ class ClimbModel:
         S_W,
         gamma,
         P_generator,
-        P_battery,
         eta_generator,
         eta_battery,
         epsilon_battery,
         h_cruise,
+        S,
+        v
     ):
         self.T_W = T_W
         self.C_D = C_D
         self.S_W = S_W
         self.gamma = gamma
         self.P_generator = P_generator
-        self.P_battery = P_battery
         self.eta_generator = eta_generator
         self.eta_battery = eta_battery
         self.epsilon_battery = epsilon_battery
         self.h_cruise = h_cruise
+        self.S = S
+        self.v = v
 
         self.g = 9.80665  # m/s^2
 
@@ -74,6 +76,9 @@ class ClimbModel:
         rho = p / (R * T)
         return rho
 
+
+
+
     def combined_thrust_from_power(self, v):
         """
         Thrust from combined generator and battery power:
@@ -82,54 +87,93 @@ class ClimbModel:
         if v <= 0:
             raise ValueError("Velocity must be positive.")
         P_eff = (
-            self.P_generator * self.eta_generator + self.P_battery * self.eta_battery
+            self.P_generator * self.eta_generator + self.battery_power_required() * self.eta_battery
         )
         return P_eff / v
 
-    def solve_velocity(self):
+    # def solve_velocity(self):
+    #     """
+    #     Solves:
+    #         T_W = 0.5*rho*v^2*(S/W)*C_D + sin(gamma)
+    #     for v.
+    #     """
+    #     rho = self.rho_isa()
+    #     sin_g = math.sin(self.gamma)
+
+    #     numerator = self.T_W - sin_g
+    #     denominator = 0.5 * rho * self.S_W * self.C_D
+
+    #     if denominator <= 0:
+    #         raise ValueError("Invalid aerodynamic parameters.")
+    #     if numerator <= 0:
+    #         raise ValueError("No real solution: T_W must exceed sin(gamma).")
+
+    #     v = math.sqrt(numerator / denominator)
+    #     return v
+
+    def required_total_power(self):
         """
-        Solves:
-            T_W = 0.5*rho*v^2*(S/W)*C_D + sin(gamma)
-        for v.
+        Total required power for entire climb
         """
+        v = self.v
+        W = self.S / self.S_W
         rho = self.rho_isa()
-        sin_g = math.sin(self.gamma)
+        q = 0.5*rho*v**2
+        D = self.C_D * (q*self.S)
 
-        numerator = self.T_W - sin_g
-        denominator = 0.5 * rho * self.S_W * self.C_D
+        P_drag = D*v
+        P_climb = W*v*np.sin(self.gamma)
 
-        if denominator <= 0:
-            raise ValueError("Invalid aerodynamic parameters.")
-        if numerator <= 0:
-            raise ValueError("No real solution: T_W must exceed sin(gamma).")
+        return P_drag + P_climb
+    
+    def battery_power_required(self):
+        """
+        Calculates required battery power for climb if using all of it 
+        
+        :param self: Description
+        """
+        P_req = self.required_total_power()
+        P_gen_eff = self.eta_generator * self.P_generator
 
-        v = math.sqrt(numerator / denominator)
-        return v
+        P_bat_eff = P_req - P_gen_eff
+
+        if P_bat_eff <= 0:
+            return 0.0
+
+        return P_bat_eff / self.eta_battery
+    
+    def battery_energy_required(self):
+        """
+        Calculates required battery energy for climb if using all of it 
+        
+        :param self: Description
+        """
+        P_bat = self.battery_power_required() * self.time_of_climb()
+        return P_bat
+    
+    def battery_mass_for_climb(self):
+        """
+        Calculates required battery mass for climb if using all of it 
+        
+        :param self: Description
+        """
+        if self.epsilon_battery <= 0:
+            raise ValueError("epsilon_battery must be positive.")
+        energy_required = self.battery_energy_required()
+        return energy_required / self.epsilon_battery
 
     def time_of_climb(self):
         """
         Computes:
             t_climb = h_cruise / (v * sin(gamma))
         """
-        v = self.solve_velocity()
+        v = self.v
         sin_g = math.sin(self.gamma)
 
         if sin_g <= 0:
             raise ValueError("gamma must be positive for climb.")
 
         return self.h_cruise / (v * sin_g)
-
-    def battery_mass_for_climb(self):
-        """
-        Computes battery mass required for climb:
-            m_battery = (P_battery * t_climb) / epsilon_battery
-        """
-        if self.epsilon_battery <= 0:
-            raise ValueError("epsilon_battery must be positive.")
-
-        t_climb = self.time_of_climb()
-        energy_required = self.P_battery * t_climb
-        return energy_required / self.epsilon_battery
 
     # Main output getter
     def get_m_battery(self):
@@ -141,25 +185,30 @@ class ClimbModel:
 
 # EXAMPLE USAGE
 
-"""if __name__ == "__main__":
+if __name__ == "__main__":
     gamma = math.radians(5.0)
 
+    # Assumed constants 
+    S = 26 # m^2
+    V = 5/ math.sin(gamma)
     # 250 Wh/kg converted to J/kg
     epsilon_battery = 250.0 * 3600.0
 
-    model = climb_model(
+    model = ClimbModel(
         T_W=0.30,
         C_D=0.03,
         S_W=1.2e-3,
         gamma=gamma,
         P_generator=80_000.0,
-        P_battery=40_000.0,
         eta_generator=0.92,
         eta_battery=0.95,
         epsilon_battery=epsilon_battery,
         h_cruise=3048.0,  # 10,000 ft in meters
+        S=S,
+        v=V
     )
 
-    print(f"Climb velocity: {model.solve_velocity():.2f} m/s")
+    print(f"Climb velocity: {V} m/s")
     print(f"Time to climb: {model.time_of_climb()/60:.2f} min")
-    print(f"Battery mass required: {model.get_m_battery():.2f} kg")"""
+    print(f"Batter Power required: {model.battery_power_required()} W")
+    print(f"Battery mass required: {model.get_m_battery():.2f} kg")
