@@ -163,3 +163,5 @@ class ClimbModel:
     print(f"Climb velocity: {model.solve_velocity():.2f} m/s")
     print(f"Time to climb: {model.time_of_climb()/60:.2f} min")
     print(f"Battery mass required: {model.get_m_battery():.2f} kg")"""
+
+# test comment
