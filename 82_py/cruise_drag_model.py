@@ -4,7 +4,7 @@ from ambiance import Atmosphere
 
 # (Assumed) Constants
 pi = np.pi
-AR = np.linspace(5, 15, 500)  # TODO: desired AR sweep range
+AR = np.linspace(5, 15, 500)
 e = 0.7
 
 # Aircraft parameters (Caravan-like)
@@ -43,11 +43,10 @@ def parastic_drag():
 
 
 CD0 = parastic_drag()
-# print(CD0)
 
 
 # Our Drag components
-CDi = CL**2 / (pi*AR*e)
+CDi = CL**2 / (pi * AR * e)
 D_i = q * S * CDi
 D_p = q * S * CD0
 D_total = D_i + D_p
