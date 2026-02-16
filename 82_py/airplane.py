@@ -6,18 +6,14 @@ from ambiance import Atmosphere
 # Our models imported
 from cruise_model import CruiseModel
 from cruise_drag_model import parastic_drag
-from power_gen import AircraftConfig, MissionResults
+from power_gen_usage import AircraftConfig, MissionResults
 from climb_model import ClimbModel
 from takeoff_model import TakeoffModel
-
-# Vectors to sweep over
-v_cruises = np.linspace(40, 120, 10)  # m/s
-ARs = np.linspace(5, 15, 10)  # Aspect ratio sweep
 
 # Design parameters (FIXED)
 CLTO = 10  # Dalton will tell us
 CDTO = 1  # Dalton
-W = 19000 * 4.445  # N (converted from lbs)
+W = 12500 * 4.445  # N (converted from lbs)
 S_W = 50  # kg/m^2
 T_W = 0.3
 h_cruise = 3048.0  # 10,000 ft in meters
@@ -59,6 +55,18 @@ class Airplane:
 
     def run_power_model(self):
         power = MissionResults(
+    rho_cruise_kgm3: float = 0,
+    wing_area_m2: float = 0,
+    thrust_required_N: float = 0,
+    P_gen_elec_kW: float = 0,
+    P_gen_sized_kW: float = 0,
+    x_to_metric: float = 0,
+    cruise_time_hr: float = 0,
+    cruise_energy_MWh: float = 0,
+    fuel_mass_cruise_kg: float = 0,
+    fuel_flow_cruise_kg_hr: float = 0
+)
+        MissionResults(
             rho_cruise,
             self.S,
             self.T,
@@ -107,12 +115,12 @@ class Airplane:
         masses = np.array([m_gen, m_bat])
         return x_TO, masses
 
-    
+# Conrads climb --> # p_bat, # m_bat
+# Zach's    
 p_gen
-p_bat
-m_bat
 m_gen
 time of flight
+Cruise fuel mass
 
 
 drela_forehead = Airplane(v_cruise=80, AR=10)
