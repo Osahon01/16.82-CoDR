@@ -212,3 +212,5 @@ if __name__ == "__main__":
     print(f"Time to climb: {model.time_of_climb()/60:.2f} min")
     print(f"Batter Power required: {model.battery_power_required()} W")
     print(f"Battery mass required: {model.get_m_battery():.2f} kg")
+
+# test comment
