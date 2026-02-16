@@ -54,20 +54,6 @@ class Airplane:
         return drag, CD_total
 
     def run_power_model(self):
-<<<<<<< HEAD
-        power = MissionResults(
-    rho_cruise_kgm3: float = 0,
-    wing_area_m2: float = 0,
-    thrust_required_N: float = 0,
-    P_gen_elec_kW: float = 0,
-    P_gen_sized_kW: float = 0,
-    x_to_metric: float = 0,
-    cruise_time_hr: float = 0,
-    cruise_energy_MWh: float = 0,
-    fuel_mass_cruise_kg: float = 0,
-    fuel_flow_cruise_kg_hr: float = 0
-)
-=======
         power =MissionResults(rho_cruise_kgm3=rho_cruise, wing_area_m2=self.S, thrust_required_N=self.T)
         
         # power =MissionResults(rho_cruise_kgm3=rho_cruise, 
@@ -80,7 +66,6 @@ class Airplane:
         #                       fuel_mass_cruise_kg: float = 0, 
         #                       fuel_flow_cruise_kg_hr: float = 0)
         
->>>>>>> ef44ddd668a0624390cf3b4e29cece7fa7ca2a1c
         MissionResults(
             rho_cruise,
             self.S,
