@@ -9,6 +9,7 @@ from cruise_drag_model import parastic_drag
 from power_gen_usage import AircraftConfig, MissionResults
 from climb_model import ClimbModel
 from takeoff_model import TakeoffModel
+from structural_wing_model import StructuralWingModel
 
 # Design parameters (FIXED)
 CLTO = 10  # Dalton will tell us
@@ -31,6 +32,16 @@ CD0 = parastic_drag()  # Hard coded from cruise drag model for now, but will nee
 # Power Model
 rho_cruise = Atmosphere(h=h_cruise).density
 
+# Climb Model Constants
+v_climb_vertical = 10.0  # m/s, vertical climb velocity (to be updated with more detailed model)
+CD_climb = 0.03  # Assumed constant drag coefficient during climb (to be updated with more detailed model)
+
+# Structural Model Constants
+structural_FOS = 1.5  # Factor of safety for structural design (to be updated based on material choice and design requirements)
+rho_spar = 1600.0  # kg/m^3, density of spar material (e.g., carbon fiber composite)
+rho_skin = 1550.0  # kg/m^3, density of skin material (e.g., carbon fiber composite)
+sigma_allow_design = 450e6  # Pa, allowable tensile/compressive stress for design (e.g., carbon fiber composite)
+tau_allow_design = 80e6  # Pa, allowable shear stress for design (e.g., carbon fiber composite)
 
 class Airplane:
     def __init__(self, v_cruise, AR):
@@ -85,34 +96,53 @@ class Airplane:
 
     def run_climb_model(self, p_gen):
         climb = ClimbModel(
-            T_W=self.T_W,
-            C_D=CD0,  # TODO: update with actual CD from cruise model
+            C_D=CD_climb,
             S_W=S_W,
             gamma=gamma,
             P_generator=p_gen,
-            P_battery=0,  # This is deprecated @biruk 
             eta_generator=eta_generator,
             eta_battery=eta_battery,
             epsilon_battery=epsilon_battery,
             h_cruise=h_cruise,
-        )
+            S=self.S,
+            v=v_climb_vertical
+            )
         time_of_climb = climb.time_of_climb()
         m_battery = climb.get_m_battery()
-        return time_of_climb, m_battery
+        p_bat = climb.battery_power_required()
+        return p_bat, m_battery, time_of_climb
 
     def run_takeoff_model(self, p_gen, p_bat):
         P_shaft_TO = p_gen * eta_generator + p_bat * eta_battery
         takeoff = TakeoffModel(self.T_W, S_W, W, P_shaft_TO, CLTO, CDTO)
         takeoff_distance = takeoff.takeoff_distance()
         return takeoff_distance
+    
+    def run_wing_structural_model(self, L_max):
+        wing_structural_model = StructuralWingModel(
+            L_max=L_max, 
+            M_max=30_000.0,
+            S=self.S,
+            AR=self.AR,
+            FOS=structural_FOS,
+            # "Medium quality" carbon composite-ish densities TODO: Update with real material choices
+            rho_spar=rho_spar,  # kg/m^3
+            rho_skin=rho_skin,  # kg/m^3
+            sigma_allow_design=sigma_allow_design,  # Pa
+            tau_allow_design=tau_allow_design,  # Pa
+        spar_mass = wing_structural_model.spar_mass()
+        skin_mass = 0 # wing_structural_model.skin_mass()
+        return spar_mass, skin_mass
+)
 
     def runner(self):
         drag, CD_total = self.run_cruise_model()
-        p_gen, m_gen, p_bat, m_bat, t_flight = self.run_power_model()
-        p_bat = self.run_climb_model(p_gen) # To be updated
+        p_gen, m_gen, t_flight = self.run_power_model()
+        p_bat, m_bat, t_climb = self.run_climb_model(p_gen)
         x_TO = self.run_takeoff_model(p_gen, p_bat)
-        # TODO: add structural model and get masses of components, then return all results in the masses array
-        masses = np.array([m_gen, m_bat])
+        L_max = W
+        spar_mass, skin_mass = self.run_wing_structural_model(L_max)
+        masses = np.array([m_gen, m_bat, spar_mass, skin_mass])
         return x_TO, masses
 
 # Conrads climb --> # p_bat, # m_bat

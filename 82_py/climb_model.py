@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
     # Assumed constants 
     S = 26 # m^2
-    V = 5/ math.sin(gamma)
+    V = 10/ math.sin(gamma)
     # 250 Wh/kg converted to J/kg
     epsilon_battery = 250.0 * 3600.0
 
