@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ambiance import Atmosphere
 from pint import UnitRegistry
-from power_gen import AircraftConfig, DEPSizingModel
+from power_gen_usage import AircraftConfig, DEPSizingModel
 from cruise_drag_model import parastic_drag, AR
 from CoDR_equations import V_CRUISE
 
