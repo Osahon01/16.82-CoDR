@@ -43,10 +43,11 @@ def parastic_drag():
 
 
 CD0 = parastic_drag()
+# print(CD0)
 
 
 # Our Drag components
-CDi = CL**2 / (pi * AR * e)
+CDi = CL**2 / (pi*AR*e)
 D_i = q * S * CDi
 D_p = q * S * CD0
 D_total = D_i + D_p
