@@ -4,7 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ambiance import Atmosphere
 from pint import UnitRegistry
-from takeoff_model import TakeoffModel
+from power_gen import AircraftConfig, DEPSizingModel
+from cruise_drag_model import parastic_drag
+from CoDR_equations import V_CRUISE
 
 # NOTE: Once takeoff code is published, I will read in inputs and update lift model accordingly
 
@@ -40,8 +42,8 @@ class CruiseModel:
     def cd_induced(self):
         return (self.cl() ** 2) / (np.pi * self.AR * self.e)
 
-    # TODO: determine whether this number should be estimated by cruise or takeoff teams 
-    def cd_parasitic(self): 
+    # TODO: determine whether this number should be estimated by cruise or takeoff teams
+    def cd_parasitic(self):
         # Assume gamma=0, and T=D
         ## cd_parasitic = cd_form + cd_skin_friction
         # return self.thrust / (self.q * self.s_ref)
@@ -57,16 +59,18 @@ class CruiseModel:
 # Runner script
 if __name__ == "__main__":
     # Design Variables
-    aspect_ratio = np.linspace(5, 15, 100)  # TODO: desired AR sweep range
-    e = .8  # TODO: determine if this value is a reasonable guess
-    Cd0 = 0.03 # TODO: For now, I'm assuming this value based on similar aircraft. As stated earlier
-               # we need to decide if this is a cruise team issue or takeoff team
-    T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0 = ...
-    takeoff_cls = TakeoffModel(
-        T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0, AR=aspect_ratio, e=e
-    )  # TODO: parameters need to be defined somewhere
-    s_ref = takeoff_cls.S
-    weight = takeoff_cls.weight  # TODO: Need this to be implemented in takeoff model; function of time or altitude
+    AR = np.linspace(5, 15, V_CRUISE_VEC.shape[0])  # TODO: desired AR sweep range
+    e = 0.7  # TODO: determine if this value is a reasonable guess
+    Cd0 = parastic_drag()
+
+    ## if TakeoffModel used:
+    #     # Takeoff Model values
+    #     T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0 = [10,10,10,10,10,10,10]
+    #     takeoff_cls = Takeoff_model(
+    #         T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CD0, AR=AR, e=e
+    #     )  # TODO: parameters need to be defined somewhere
+    #     s_ref = takeoff_cls.S
+    #     weight = takeoff_cls.weight  # TODO: Need this to be implemented in takeoff model; function of time or altitude
 
     # End of takeoff (eot) parameters; TODO: Need this to be implemented in takeoff model
     v_cruise = takeoff_cls.v_eot  # assumed constant
@@ -87,7 +91,7 @@ if __name__ == "__main__":
         aspect_ratio=aspect_ratio,
         e=e,
         thrust=thrust,
-        Cd0=CD0
+        Cd0=CD0,
     )
 
     PLOT = False
