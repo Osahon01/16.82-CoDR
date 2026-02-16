@@ -11,13 +11,14 @@ from power_gen_usage import AircraftConfig, DEPSizingModel
 from climb_model import ClimbModel
 from takeoff_model import TakeoffModel
 from structural_wing_model import StructuralWingModel
+from CoDR_equations import g
 
 # Design parameters (FIXED)
 RANGE = 2500000 * ureg("m")
 CLTO = 10  # Dalton will tell us
 CDTO = 1  # Dalton
 W = 12500 * 4.445  # N (converted from lbs)
-S_W = 50  # kg/m^2
+W_S = 50  # kg/m^2
 T_W = 0.3
 h_cruise = 3048.0 * ureg("m")  # 10,000 ft in meters
 gamma = math.radians(15.0)  # Climb angle in radians
@@ -49,7 +50,7 @@ class Airplane:
     def __init__(self, v_cruise, AR):
         self.v_cruise = v_cruise * ureg("m/s")
         self.AR = AR
-        self.S = W / S_W  # Wing area (m^2)
+        self.S = W / W_S  # Wing area (m^2)
         self.T = W * T_W  # Takeoff thrust (N)
 
     def run_cruise_model(self):
@@ -66,17 +67,15 @@ class Airplane:
         CD_total = cruise.cd_total()
         return drag, CD_total
 
-    def run_power_model(self):
+    def run_power_model(self, CD_total):
         cfg = AircraftConfig(
             range_m=RANGE,
             V_cruise=self.v_cruise,
             alt_cruise_m=h_cruise,
-            Cd=0.02,
-            CLmax=7,
-            mass_kg=4000 * ureg("kg"),
-            wing_loading_kgm2=180 * ureg("kg/m^2"),
-            thrust_loading_TW=0.4,
-            eta_prop=0.85,
+            Cd=CD_total,
+            mass_kg=W/g * ureg("kg"),
+            wing_loading_kgm2=W_S * ureg("kg/m^2"),
+            eta_prop=eta_v_prop * eta_add_prop,
             eta_motor=0.95,
             eta_inverter=0.98,
             eta_gearbox=1,
@@ -98,7 +97,7 @@ class Airplane:
     def run_climb_model(self, p_gen):
         climb = ClimbModel(
             C_D=CD_climb,
-            S_W=S_W,
+            W_S=W_S,
             gamma=gamma,
             P_generator=p_gen,
             eta_generator=eta_generator,
@@ -115,7 +114,7 @@ class Airplane:
 
     def run_takeoff_model(self, p_gen, p_bat):
         P_shaft_TO = p_gen * eta_generator + p_bat * eta_battery
-        takeoff = TakeoffModel(self.T_W, S_W, W, P_shaft_TO, CLTO, CDTO)
+        takeoff = TakeoffModel(self.T_W, W_S, W, P_shaft_TO, CLTO, CDTO)
         takeoff_distance = takeoff.takeoff_distance()
         return takeoff_distance
     
@@ -132,18 +131,18 @@ class Airplane:
             sigma_allow_design=sigma_allow_design,  # Pa
             tau_allow_design=tau_allow_design,  # Pa
         spar_mass = wing_structural_model.spar_mass()
-        skin_mass = 0 # wing_structural_model.skin_mass()
+        skin_mass = 0 # wing_structural_model.skin_mass() # TODO: update skin mass model to be more accurate before using
         return spar_mass, skin_mass
 )
 
     def runner(self):
         drag, CD_total = self.run_cruise_model()
-        p_gen, m_gen, t_flight = self.run_power_model()
+        p_gen, m_fuel, t_flight, m_gen = self.run_power_model(CD_total)
         p_bat, m_bat, t_climb = self.run_climb_model(p_gen)
         x_TO = self.run_takeoff_model(p_gen, p_bat)
         L_max = W
         spar_mass, skin_mass = self.run_wing_structural_model(L_max)
-        masses = np.array([m_gen, m_bat, spar_mass, skin_mass])
+        masses = np.array([m_gen, m_bat, m_fuel, spar_mass, skin_mass])
         return x_TO, masses
 
 
