@@ -59,8 +59,6 @@ class ClimbModel:
         self.v = v
         self.W = W
 
-        self.g = 9.80665  # m/s^2
-
     def combined_thrust_from_power(self, v):
         """
         Thrust from combined generator and battery power:

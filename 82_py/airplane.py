@@ -18,10 +18,10 @@ from CoDR_equations import g
 
 # Design parameters (FIXED)
 RANGE = 2500000 * ureg("m")
-CLTO = 10  # Dalton will tell us
-CDTO = 1  # Dalton
+CLTO = 6.1  # Dalton will tell us
+CDTO = 1.59  # Dalton
 W = 12500 * 4.445  # N (converted from lbs)
-W_S = 50  # kg/m^2
+W_S = 100  # kg/m^2
 T_W = 0.3
 h_cruise = 3048.0 * ureg("m")  # 10,000 ft in meters
 gamma = math.radians(15.0)  # Climb angle in radians
@@ -40,9 +40,9 @@ rho_cruise = Atmosphere(h=h_cruise.magnitude).density[0]  # in SI units
 
 # Climb Model Constants
 v_climb_vertical = (
-    10.0  # m/s, vertical climb velocity (to be updated with more detailed model)
+    15.0  # m/s, vertical climb velocity (to be updated with more detailed model)
 )
-CD_climb = 0.03  # Assumed constant drag coefficient during climb (to be updated with more detailed model)
+CD_climb = 0.1  # Assumed constant drag coefficient during climb (to be updated with more detailed model)
 
 # Structural Model Constants
 structural_FOS = 1.5  # Factor of safety for structural design (to be updated based on material choice and design requirements)
