@@ -8,7 +8,7 @@ V_SWEEP = np.linspace(70, 130, 5)
 AR_SWEEP = np.linspace(8, 15, 5)
 
 pareto_results = []
-bounds = [(70, 130), (8, 15)]
+bounds = [(50, 130), (8, 15)]
 
 for mass_target in MASS_TARGETS:
     v_opt_list = []
@@ -32,7 +32,7 @@ for mass_target in MASS_TARGETS:
                 x0,
                 method="L-BFGS-B",
                 bounds=bounds,
-                options={"ftol": 1e-3, "gtol": 1e-3, "maxfun": 50},
+                options={"ftol": 1e-1, "gtol": 1e-1, "maxfun": 25},
             )
 
             v_best, AR_best = res.x

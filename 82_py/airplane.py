@@ -21,9 +21,9 @@ N_pass = 9
 RANGE = 2500000 * ureg("m")
 CLTO = 6.1  # Dalton will tell us
 CDTO = 1.59  # Dalton
-CMTO = 0.2 # Dalton (?!!)
+CMTO = 0.2  # Dalton (?!!)
 W = 12500 * 4.445  # N (converted from lbs)
-W_S = 100  # kg/m^2
+W_S = 200  # kg/m^2
 T_W = 0.3
 h_cruise = 3048.0 * ureg("m")  # 10,000 ft in meters
 gamma = math.radians(25.0)  # Climb angle in radians
@@ -125,7 +125,9 @@ class Airplane:
 
     def run_takeoff_model(self, p_gen, p_bat):
         P_shaft_TO = p_gen.to("W").magnitude * eta_generator + p_bat * eta_battery
-        takeoff = TakeoffModel(T_W, W_S, W, P_shaft_TO, CLTO, CDTO, CMTO, self.AR, self.S)
+        takeoff = TakeoffModel(
+            T_W, W_S, W, P_shaft_TO, CLTO, CDTO, CMTO, self.AR, self.S
+        )
         takeoff_distance = takeoff.takeoff_distance()
         takeoff_torsion = takeoff.get_torsion_moment()
         return takeoff_distance, takeoff_torsion
@@ -146,7 +148,7 @@ class Airplane:
         spar_mass = wing_structural_model.spar_mass()
         skin_mass = wing_structural_model.skin_mass()
         return spar_mass, skin_mass
-    
+
     def get_passenger_mass(self):
         # Assuming an average passenger mass of 100 kg (including luggage)
         return N_pass * 100 * ureg("kg")
@@ -165,7 +167,7 @@ class Airplane:
                 m_fuel.magnitude,
                 spar_mass,
                 float(skin_mass),
-                self.get_passenger_mass().magnitude
+                self.get_passenger_mass().magnitude,
             ]
         )
         return x_TO, masses
@@ -176,7 +178,7 @@ x_TO, masses = drela_forehead.runner()
 drag, CD_total = drela_forehead.run_cruise_model()
 print(
     f"{50 * '='}\nCruise model test\nDrag: {round(drag, 2)}\nCD_total: {(round(CD_total, 2))}"
-    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[4], 2)}\n{50 * '='}"
+    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(sum(masses), 2)}\n{50 * '='}"
 )
 
 drela_forehead_2 = Airplane(v_cruise=100, AR=12)
@@ -184,5 +186,5 @@ x_TO, masses = drela_forehead_2.runner()
 drag, CD_total = drela_forehead_2.run_cruise_model()
 print(
     f"{50 * '='}\nCruise model test\nDrag: {round(drag, 2)}\nCD_total: {(round(CD_total, 2))}"
-    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[4], 2)}\n{50 * '='}"
+    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(sum(masses), 2)}\n{50 * '='}"
 )
