@@ -40,7 +40,7 @@ class CruiseModel:
 
     def cd_total(self):
         # Current model will not account for viscous drag (not significant in cd calculations)
-        return self.cd_induced() + self.cd_parasitic()
+        return self.cd_induced().magnitude + self.cd_parasitic()
 
     def drag_total(self):
         return self.cd_total() * self.q * self.s_ref

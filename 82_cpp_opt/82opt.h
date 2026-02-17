@@ -1,7 +1,6 @@
 #ifndef FVD_FITNESS
 #define FVD_FITNESS
 
-// #define FVD_EVAL
 
 #include <pagmo/problem.hpp>
 #include <pagmo/types.hpp>
@@ -12,6 +11,7 @@ struct problem_fvd{
     public:
         // Non-varying parameters
         // Define things like environment parameters and compenent efficiencies here
+        double min_V_cruise;
         static constexpr double g = 9.8066;
         static constexpr double rho_0k = 1.2;
 
