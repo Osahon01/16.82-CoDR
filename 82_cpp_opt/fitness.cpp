@@ -8,9 +8,12 @@
 
 using namespace pagmo;
 
-problem_fvd make_pfvd_obj(double v){
+// double - minimum cruise velocity
+// double - minimum cruise range
+problem_fvd make_pfvd_obj(double v, double r){
     problem_fvd x;
     x.min_V_cruise = v;
+    x.min_Range = r;
     return x;
 }
 
@@ -46,7 +49,7 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         // }
 
         auto m = x[0];
-        auto f = x[1]; // Low fidelity strategy - upper bound as 0.4
+        auto f = x[1];
         auto S = x[2];
         auto AR = x[3];
         auto T_TO = x[4];
@@ -83,7 +86,7 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         double P_cruise_shaft = (D_cruise*V_cruise) / eta_fr_cruise;
         double Range = ((h_avgas*eta_gen*eta_fr_cruise*0.95)/g)*LD_cruise*std::log(1./(1.+(-1.*f)));
 
-        double con_min_range = 2420000 - Range;
+        double con_min_range = min_Range - Range;
 
         double m_struc = 1000. * (S_wet / 140.);
         double m_prop = std::max(P_TO_shaft,P_cruise_shaft) / P_spec_prop;

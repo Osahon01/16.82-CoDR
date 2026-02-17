@@ -12,6 +12,7 @@ struct problem_fvd{
         // Non-varying parameters
         // Define things like environment parameters and compenent efficiencies here
         double min_V_cruise;
+        double min_Range;
         static constexpr double g = 9.8066;
         static constexpr double rho_0k = 1.2;
 
@@ -63,6 +64,6 @@ struct problem_fvd{
         double delta_J_surr(double hd_S, double delta_F) const;
 };
 
-problem_fvd make_pfvd_obj(double v);
+problem_fvd make_pfvd_obj(double v, double r);
 
 #endif
