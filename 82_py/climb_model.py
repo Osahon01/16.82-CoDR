@@ -43,7 +43,7 @@ class ClimbModel:
         epsilon_battery,
         h_cruise,
         S,
-        v,
+        v_climb_vertical,
         W,
     ):
         # self.T_W = T_W
@@ -56,9 +56,11 @@ class ClimbModel:
         self.epsilon_battery = epsilon_battery
         self.h_cruise = h_cruise
         self.S = S
-        self.v = v
+        self.v_climb_vertical = v_climb_vertical
+        self.v = v_climb_vertical / math.sin(gamma)  # Total climb velocity from vertical component
         self.W = W
 
+    # Never used I think
     def combined_thrust_from_power(self, v):
         """
         Thrust from combined generator and battery power:
@@ -96,13 +98,12 @@ class ClimbModel:
         """
         Total required power for entire climb
         """
-        v = self.v
         rho = Atmosphere(h=self.h_cruise.magnitude).density
-        q = 0.5 * rho * v**2
+        q = 0.5 * rho * self.v**2
         D = self.C_D * (q * self.S)
 
-        P_drag = D * v
-        P_climb = self.W * v * np.sin(self.gamma)
+        P_drag = D * self.v
+        P_climb = self.W * self.v_climb_vertical
 
         return P_drag + P_climb
 

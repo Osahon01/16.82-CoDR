@@ -113,7 +113,7 @@ class Airplane:
             epsilon_battery=epsilon_battery,
             h_cruise=h_cruise,
             S=self.S,
-            v=v_climb_vertical,
+            v_climb_vertical=v_climb_vertical,
             W=W,
         )  # pyright: ignore[reportCallIssue]
         time_of_climb = climb.time_of_climb()
