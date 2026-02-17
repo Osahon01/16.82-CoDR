@@ -1,3 +1,5 @@
+"""NOTE: Do not run! For visualization, run mass_closure_post.py since data is already saved."""
+
 import pickle
 import numpy as np
 from airplane import Airplane

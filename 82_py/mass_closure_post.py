@@ -1,4 +1,4 @@
-"""Post processing script"""
+"""Post processing script. Use to visualize optimizer results (it has already been tabulated)."""
 
 import pickle
 import numpy as np
