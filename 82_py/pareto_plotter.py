@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class TakeoffCruisePlotter:
     """
     Plots x_TO (roll takeoff distance, m) versus v_cruise (m/s) while sweeping v_cruise and AR.
@@ -35,13 +36,17 @@ class TakeoffCruisePlotter:
 
         self.ar_values = np.array(list(ar_values), dtype=float)
         if self.ar_values.ndim != 1 or len(self.ar_values) < 2:
-            raise ValueError("ar_values must be a 1D list/array with at least 2 AR values.")
+            raise ValueError(
+                "ar_values must be a 1D list/array with at least 2 AR values."
+            )
 
         self.v_values = np.linspace(self.v_min, self.v_max, self.n_v)
 
         # Which specific ARs to highlight as "contours vs v_cruise" (line plots)
         self.ar_lines = (
-            np.array(list(ar_lines), dtype=float) if ar_lines is not None else np.array([], dtype=float)
+            np.array(list(ar_lines), dtype=float)
+            if ar_lines is not None
+            else np.array([], dtype=float)
         )
 
         # Annotation values
@@ -63,7 +68,9 @@ class TakeoffCruisePlotter:
         # Fallback: runner property or attribute that is subscriptable (tuple/array)
         out = getattr(airplane_obj, "runner", None)
         if out is None:
-            raise AttributeError("Airplane object has no runner() method or runner attribute.")
+            raise AttributeError(
+                "Airplane object has no runner() method or runner attribute."
+            )
         return float(out[0])
 
     def compute_grid(self, *, verbose: bool = True):
@@ -74,7 +81,7 @@ class TakeoffCruisePlotter:
 
         for i, AR in enumerate(self.ar_values):
             if verbose:
-                print(f"Computing AR={AR:g} ({i+1}/{n_ar})...")
+                print(f"Computing AR={AR:g} ({i + 1}/{n_ar})...")
             for j, v in enumerate(self.v_values):
                 plane = self.Airplane(v_cruise=v, AR=AR)
                 X[i, j] = self._get_x_to(plane)
@@ -84,10 +91,14 @@ class TakeoffCruisePlotter:
 
     def _annotation_text(self) -> str:
         lines = []
-        if self.CLTO is not None: lines.append(f"CLTO = {self.CLTO:g}")
-        if self.CDTO is not None: lines.append(f"CDTO = {self.CDTO:g}")
-        if self.W is not None:    lines.append(f"W = {self.W:,.0f} N")
-        if self.T_W is not None:  lines.append(f"T:W (TO) = {self.T_W:g}")
+        if self.CLTO is not None:
+            lines.append(f"CLTO = {self.CLTO:g}")
+        if self.CDTO is not None:
+            lines.append(f"CDTO = {self.CDTO:g}")
+        if self.W is not None:
+            lines.append(f"W = {self.W:,.0f} N")
+        if self.T_W is not None:
+            lines.append(f"T:W (TO) = {self.T_W:g}")
         return "\n".join(lines)
 
     def plot(
@@ -116,7 +127,9 @@ class TakeoffCruisePlotter:
             cf = ax.contourf(V, AR, self.XTO, levels=levels, cmap=cmap)
             cbar = fig.colorbar(cf, ax=ax)
             cbar.set_label("x_TO (m)")
-            cs = ax.contour(V, AR, self.XTO, levels=levels, colors="k", linewidths=0.6, alpha=0.6)
+            cs = ax.contour(
+                V, AR, self.XTO, levels=levels, colors="k", linewidths=0.6, alpha=0.6
+            )
             ax.clabel(cs, inline=True, fontsize=8, fmt="%.0f")
         else:
             cs = ax.contour(V, AR, self.XTO, levels=levels)
@@ -130,7 +143,9 @@ class TakeoffCruisePlotter:
                 # Find nearest AR index on the grid
                 idx = int(np.argmin(np.abs(self.ar_values - ar_target)))
                 ar_used = self.ar_values[idx]
-                ax.plot(self.v_values, np.full_like(self.v_values, ar_used), lw=2, alpha=0.9)
+                ax.plot(
+                    self.v_values, np.full_like(self.v_values, ar_used), lw=2, alpha=0.9
+                )
                 # Label the AR line on the right
                 ax.text(
                     self.v_values[-1],
@@ -139,7 +154,9 @@ class TakeoffCruisePlotter:
                     va="center",
                     ha="left",
                     fontsize=9,
-                    bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.7),
+                    bbox=dict(
+                        boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.7
+                    ),
                 )
 
         # Axes / title
@@ -152,9 +169,12 @@ class TakeoffCruisePlotter:
         info = self._annotation_text()
         if info:
             ax.text(
-                0.02, 0.98, info,
+                0.02,
+                0.98,
+                info,
                 transform=ax.transAxes,
-                va="top", ha="left",
+                va="top",
+                ha="left",
                 fontsize=10,
                 bbox=dict(boxstyle="round,pad=0.35", fc="white", ec="0.5", alpha=0.9),
             )
@@ -190,15 +210,19 @@ class TakeoffCruisePlotter:
         info = self._annotation_text()
         if info:
             ax.text(
-                0.02, 0.98, info,
+                0.02,
+                0.98,
+                info,
                 transform=ax.transAxes,
-                va="top", ha="left",
+                va="top",
+                ha="left",
                 fontsize=10,
                 bbox=dict(boxstyle="round,pad=0.35", fc="white", ec="0.5", alpha=0.9),
             )
 
         plt.tight_layout()
         return fig, ax
+
 
 import math
 from airplane import Airplane  # your class
@@ -208,8 +232,8 @@ plotter = TakeoffCruisePlotter(
     v_min=80.0,
     v_max=140.0,
     n_v=11,
-    ar_values=np.linspace(6, 18, 25),      # sweep AR for the contour grid
-    ar_lines=[6, 8, 10, 12, 14],          # “specific ARs” to highlight
+    ar_values=np.linspace(6, 18, 25),  # sweep AR for the contour grid
+    ar_lines=[6, 8, 10, 12, 14],  # “specific ARs” to highlight
 )
 
 plotter.compute_grid(verbose=True)

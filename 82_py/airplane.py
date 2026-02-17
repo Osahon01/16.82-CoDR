@@ -122,7 +122,7 @@ class Airplane:
         return p_bat, m_battery, time_of_climb
 
     def run_takeoff_model(self, p_gen, p_bat):
-        P_shaft_TO = p_gen * eta_generator + p_bat * eta_battery
+        P_shaft_TO = p_gen.to("W").magnitude * eta_generator + p_bat * eta_battery
         takeoff = TakeoffModel(T_W, W_S, W, P_shaft_TO, CLTO, CDTO)
         takeoff_distance = takeoff.takeoff_distance()
         return takeoff_distance

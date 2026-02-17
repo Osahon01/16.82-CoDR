@@ -21,7 +21,7 @@ class TakeoffModel:
 
         # Constants
         self.g = g  # Acceleration due to gravity (m/s^2)
-        self.rho_SL = Atmosphere(h=0).density  # Air density at sea level (kg/m^3)
+        self.rho_SL = Atmosphere(h=0).density[0]  # Air density at sea level (kg/m^3)
         self.rho_cruise = None  # Atmosphere(h=H_END).density  # Air density at cruise (kg/m^3) - CURRENTLY ASSUMING 3000m CRUISE
 
         self.eta_v = 0.7  # Propeller efficiency (assumed constant for simplicity)

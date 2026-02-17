@@ -57,7 +57,9 @@ class ClimbModel:
         self.h_cruise = h_cruise
         self.S = S
         self.v_climb_vertical = v_climb_vertical
-        self.v = v_climb_vertical / math.sin(gamma)  # Total climb velocity from vertical component
+        self.v = v_climb_vertical / math.sin(
+            gamma
+        )  # Total climb velocity from vertical component
         self.W = W
 
     # Never used I think
@@ -98,7 +100,7 @@ class ClimbModel:
         """
         Total required power for entire climb
         """
-        rho = Atmosphere(h=self.h_cruise.magnitude).density
+        rho = Atmosphere(h=self.h_cruise.magnitude).density[0]
         q = 0.5 * rho * self.v**2
         D = self.C_D * (q * self.S)
 
