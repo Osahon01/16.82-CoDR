@@ -21,7 +21,7 @@ N_pass = 9
 RANGE = 2500000 * ureg("m")
 CLTO = 6.1  # Dalton will tell us
 CDTO = 1.59  # Dalton
-CMTO = 0.2 # Dalton (?!!)
+CMTO = 1.3 # Dalton (?!!)
 W = 12500 * 4.445  # N (converted from lbs)
 W_S = 100  # kg/m^2
 T_W = 0.3
@@ -171,18 +171,34 @@ class Airplane:
         return x_TO, masses
 
 
-drela_forehead = Airplane(v_cruise=100, AR=10)
+drela_forehead = Airplane(v_cruise=70, AR=8)
 x_TO, masses = drela_forehead.runner()
 drag, CD_total = drela_forehead.run_cruise_model()
 print(
     f"{50 * '='}\nCruise model test\nDrag: {round(drag, 2)}\nCD_total: {(round(CD_total, 2))}"
-    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[4], 2)}\n{50 * '='}"
+    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[0], 2)}\n{50 * '='}"
 )
 
-drela_forehead_2 = Airplane(v_cruise=100, AR=12)
+drela_forehead_2 = Airplane(v_cruise=70, AR=15)
 x_TO, masses = drela_forehead_2.runner()
 drag, CD_total = drela_forehead_2.run_cruise_model()
 print(
     f"{50 * '='}\nCruise model test\nDrag: {round(drag, 2)}\nCD_total: {(round(CD_total, 2))}"
-    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[4], 2)}\n{50 * '='}"
+    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[0], 2)}\n{50 * '='}"
+)
+
+drela_forehead_2 = Airplane(v_cruise=130, AR=8)
+x_TO, masses = drela_forehead_2.runner()
+drag, CD_total = drela_forehead_2.run_cruise_model()
+print(
+    f"{50 * '='}\nCruise model test\nDrag: {round(drag, 2)}\nCD_total: {(round(CD_total, 2))}"
+    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[0], 2)}\n{50 * '='}"
+)
+
+drela_forehead_2 = Airplane(v_cruise=130, AR=15)
+x_TO, masses = drela_forehead_2.runner()
+drag, CD_total = drela_forehead_2.run_cruise_model()
+print(
+    f"{50 * '='}\nCruise model test\nDrag: {round(drag, 2)}\nCD_total: {(round(CD_total, 2))}"
+    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[0], 2)}\n{50 * '='}"
 )
