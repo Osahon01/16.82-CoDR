@@ -21,7 +21,7 @@ N_pass = 9
 RANGE = 2500000 * ureg("m")
 CLTO = 6.1  # Dalton will tell us
 CDTO = 1.59  # Dalton
-CMTO = 1.3 # Dalton (?!!)
+CMTO = 1.3  # Dalton (?!!)
 W = 12500 * 4.445  # N (converted from lbs)
 W_S = 130  # kg/m^2
 T_W = 0.3
@@ -57,11 +57,12 @@ tau_allow_design = (
 
 
 class Airplane:
-    def __init__(self, v_cruise, AR, W):
+    def __init__(self, v_cruise, AR, W, W_S=W_S):
         self.v_cruise = v_cruise * ureg("m/s")
         self.AR = AR
         self.W = W
-        self.S = (self.W / W_S) / g  # Wing area (m^2)
+        self.W_S = W_S
+        self.S = (self.W / self.W_S) / g  # Wing area (m^2)
         self.T = self.W * T_W  # Takeoff thrust (N)
 
     def run_cruise_model(self):
@@ -85,7 +86,7 @@ class Airplane:
             alt_cruise_m=h_cruise,
             Cd=CD_total,
             mass_kg=(self.W / g) * ureg("kg"),
-            wing_loading_kgm2=W_S * ureg("kg/m^2"),
+            wing_loading_kgm2=self.W_S * ureg("kg/m^2"),
             eta_prop=eta_v_prop * eta_add_prop,
             eta_motor=0.95,
             eta_inverter=0.98,
@@ -108,7 +109,7 @@ class Airplane:
     def run_climb_model(self, p_gen):
         climb = ClimbModel(
             C_D=CD_climb,
-            W_S=W_S,
+            W_S=self.W_S,
             gamma=gamma,
             P_generator=p_gen,
             eta_generator=eta_generator,
@@ -127,7 +128,7 @@ class Airplane:
     def run_takeoff_model(self, p_gen, p_bat):
         P_shaft_TO = p_gen.to("W").magnitude * eta_generator + p_bat * eta_battery
         takeoff = TakeoffModel(
-            T_W, W_S, self.W, P_shaft_TO, CLTO, CDTO, CMTO, self.AR, self.S
+            T_W, self.W_S, self.W, P_shaft_TO, CLTO, CDTO, CMTO, self.AR, self.S
         )
         takeoff_distance = takeoff.takeoff_distance()
         takeoff_torsion = takeoff.get_torsion_moment()
@@ -175,7 +176,7 @@ class Airplane:
         return x_TO, masses
 
 
-drela_forehead = Airplane(v_cruise=70, AR=8)
+drela_forehead = Airplane(v_cruise=70, AR=8, W=W)
 x_TO, masses = drela_forehead.runner()
 drag, CD_total = drela_forehead.run_cruise_model()
 print(
@@ -183,7 +184,7 @@ print(
     f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[0], 2)}\n{50 * '='}"
 )
 
-drela_forehead_2 = Airplane(v_cruise=70, AR=15)
+drela_forehead_2 = Airplane(v_cruise=70, AR=15, W=W)
 x_TO, masses = drela_forehead_2.runner()
 drag, CD_total = drela_forehead_2.run_cruise_model()
 print(
@@ -191,7 +192,7 @@ print(
     f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[0], 2)}\n{50 * '='}"
 )
 
-drela_forehead_2 = Airplane(v_cruise=130, AR=8)
+drela_forehead_2 = Airplane(v_cruise=130, AR=8, W=W)
 x_TO, masses = drela_forehead_2.runner()
 drag, CD_total = drela_forehead_2.run_cruise_model()
 print(
@@ -199,7 +200,7 @@ print(
     f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[0], 2)}\n{50 * '='}"
 )
 
-drela_forehead_2 = Airplane(v_cruise=130, AR=15)
+drela_forehead_2 = Airplane(v_cruise=130, AR=15, W=W)
 x_TO, masses = drela_forehead_2.runner()
 drag, CD_total = drela_forehead_2.run_cruise_model()
 print(
