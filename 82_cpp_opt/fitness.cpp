@@ -16,8 +16,8 @@ vector_double::size_type problem_fvd::get_nic() const{
 }
 
 std::pair<vector_double, vector_double> problem_fvd::get_bounds() const{
-    vector_double lb = {1500.,0.,10.,3.,0.,-5.,0.,30.,0.,0.};
-    vector_double ub = {5000.,1.,500.,15.,50000.,20.,1.,60.,20.,1.4};
+    vector_double lb = {1500.,0.,10.,3.,0.,5.,0.,30.,0.,0.};
+    vector_double ub = {8618.,1.,500.,15.,50000.,20.,1.,60.,20.,1.4};
     std::pair<vector_double, vector_double> ret(lb,ub);
     return ret;
 }
