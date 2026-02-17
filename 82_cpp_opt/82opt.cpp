@@ -17,6 +17,9 @@ int main() {
     problem_fvd pfvd_obj;
     pfvd_obj.min_V_cruise = 125.;
 
+    pagmo::vector_double x1 = {4908.15,0.543647,40.8389,9.61111,24111.9,17.5129,0.732614,40.7335,6.92581,0.158279};
+    pfvd_obj.fitness(x1);
+
     // Design variable headers
     const char* headers[] = {
         "min_V_cruise",
