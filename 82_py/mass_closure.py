@@ -67,15 +67,15 @@ colors = plt.cm.viridis(np.linspace(0, 1, len(MASS_TARGETS)))
 
 for i, res in enumerate(pareto_results):
     plt.scatter(
-        res["v_cruise"],
         res["AR"],
+        res["v_cruise"],
         s=50,
         color=colors[i],
         label=f"{(res['mass_target'])} kg",
     )
 
-plt.xlabel("Cruise Velocity (m/s)")
-plt.ylabel("Aspect Ratio (AR)")
+plt.xlabel("Aspect Ratio (AR)")
+plt.ylabel("Cruise Velocity (m/s)")
 plt.title("Pareto-like Front: v_cruise vs AR for each Mass Target")
 plt.legend()
 plt.grid(True)
@@ -89,6 +89,11 @@ for i, res in enumerate(pareto_results):
         s=50,
         color=colors[i],
         label=f"{res['mass_target']} kg",
+    )
+    plt.plot(
+        res["v_cruise"],
+        res["x_TO"],
+        color=colors[i],
     )
 
 plt.xlabel("Cruise Velocity (m/s)")
