@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from ambiance import Atmosphere
 from pint import UnitRegistry
 from power_gen_usage import AircraftConfig, DEPSizingModel
-from cruise_drag_model import parastic_drag, AR
+from cruise_drag_model import parastic_drag
 from CoDR_equations import V_CRUISE
 
 # NOTE: Once takeoff code is published, I will read in inputs and update lift model accordingly
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # Design Variables
     e = 0.7  # TODO: determine if this value is a reasonable guess
     Cd0 = parastic_drag()
-
+    AR = 10  # placeholder
     # TODO: Update with actual values by calling relevant class
     cruise_cls = CruiseModel(
         s_ref=10,  # TODO: update to varied model

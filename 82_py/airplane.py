@@ -23,7 +23,7 @@ CLTO = 6.1  # Dalton will tell us
 CDTO = 1.59  # Dalton
 CMTO = 1.3 # Dalton (?!!)
 W = 12500 * 4.445  # N (converted from lbs)
-W_S = 100  # kg/m^2
+W_S = 130  # kg/m^2
 T_W = 0.3
 h_cruise = 3048.0 * ureg("m")  # 10,000 ft in meters
 gamma = math.radians(25.0)  # Climb angle in radians
@@ -57,16 +57,17 @@ tau_allow_design = (
 
 
 class Airplane:
-    def __init__(self, v_cruise, AR):
+    def __init__(self, v_cruise, AR, W):
         self.v_cruise = v_cruise * ureg("m/s")
         self.AR = AR
-        self.S = (W / W_S) / g  # Wing area (m^2)
-        self.T = W * T_W  # Takeoff thrust (N)
+        self.W = W
+        self.S = (self.W / W_S) / g  # Wing area (m^2)
+        self.T = self.W * T_W  # Takeoff thrust (N)
 
     def run_cruise_model(self):
         cruise = CruiseModel(
             s_ref=self.S,
-            weight=W,
+            weight=self.W,
             v_cruise=self.v_cruise,
             h_cruise=h_cruise,
             AR=self.AR,
@@ -83,7 +84,7 @@ class Airplane:
             V_cruise=self.v_cruise,
             alt_cruise_m=h_cruise,
             Cd=CD_total,
-            mass_kg=(W / g) * ureg("kg"),
+            mass_kg=(self.W / g) * ureg("kg"),
             wing_loading_kgm2=W_S * ureg("kg/m^2"),
             eta_prop=eta_v_prop * eta_add_prop,
             eta_motor=0.95,
@@ -116,7 +117,7 @@ class Airplane:
             h_cruise=h_cruise,
             S=self.S,
             v_climb_vertical=v_climb_vertical,
-            W=W,
+            W=self.W,
         )  # pyright: ignore[reportCallIssue]
         time_of_climb = climb.time_of_climb()
         m_battery = climb.get_m_battery()
@@ -125,7 +126,9 @@ class Airplane:
 
     def run_takeoff_model(self, p_gen, p_bat):
         P_shaft_TO = p_gen.to("W").magnitude * eta_generator + p_bat * eta_battery
-        takeoff = TakeoffModel(T_W, W_S, W, P_shaft_TO, CLTO, CDTO, CMTO, self.AR, self.S)
+        takeoff = TakeoffModel(
+            T_W, W_S, self.W, P_shaft_TO, CLTO, CDTO, CMTO, self.AR, self.S
+        )
         takeoff_distance = takeoff.takeoff_distance()
         takeoff_torsion = takeoff.get_torsion_moment()
         return takeoff_distance, takeoff_torsion
@@ -146,7 +149,7 @@ class Airplane:
         spar_mass = wing_structural_model.spar_mass()
         skin_mass = wing_structural_model.skin_mass()
         return spar_mass, skin_mass
-    
+
     def get_passenger_mass(self):
         # Assuming an average passenger mass of 100 kg (including luggage)
         return N_pass * 100 * ureg("kg")
@@ -156,8 +159,9 @@ class Airplane:
         p_gen, m_fuel, t_flight, m_gen = self.run_power_model(CD_total)
         p_bat, m_bat, t_climb = self.run_climb_model(p_gen)
         x_TO, M_max = self.run_takeoff_model(p_gen, p_bat)
-        L_max = W
+        L_max = self.W
         spar_mass, skin_mass = self.run_wing_structural_model(L_max, M_max)
+        spar_mass *= 5
         masses = np.array(
             [
                 m_gen.magnitude,
@@ -165,7 +169,7 @@ class Airplane:
                 m_fuel.magnitude,
                 spar_mass,
                 float(skin_mass),
-                self.get_passenger_mass().magnitude
+                self.get_passenger_mass().magnitude,
             ]
         )
         return x_TO, masses

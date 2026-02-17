@@ -90,9 +90,9 @@ class DEPSizingModel:
         mission_cls.fuel_flow_cruise_kg_hr = mission_cls.fuel_mass_cruise_kg / (
             mission_cls.cruise_time_hr
         )
-        # assumes linear weight scaling from this: https://evtol.news/news/hard-core-hybrids
+        # assumes linear weight scaling from this: https://prod-edam.honeywell.com/content/dam/honeywell-edam/aero/en-us/products/power-and-propulsion/electric-power/honeywell-1-megawatt-mw-turbogenerator/documents/hon-aero-n61-2229-000-000-1mw-generator-brochure-en.pdf?download=false
         mission_cls.gen_mass = (mission_cls.P_gen_sized_kW) * (
-            295 * ureg("kg") / (370 * ureg("kW"))
+            125.6 * ureg("kg") / (1 * ureg("MW").to("kW"))
         )
         return mission_cls
 

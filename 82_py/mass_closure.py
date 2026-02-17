@@ -2,15 +2,17 @@ import numpy as np
 from airplane import Airplane
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
+from CoDR_equations import g
 
-MASS_TARGETS = np.linspace(4500, 8000, 5)
-V_SWEEP = np.linspace(70, 130, 5)
-AR_SWEEP = np.linspace(8, 15, 5)
+MASS_TARGETS = np.linspace(4500, 8000, 7)
+V_SWEEP = np.linspace(50, 130, 7)
+AR_SWEEP = np.linspace(4, 15, 7)
 
 pareto_results = []
-bounds = [(70, 130), (8, 15)]
+bounds = [(50, 130), (4, 15)]
 
 for mass_target in MASS_TARGETS:
+    print(f"Optimizing for mass closure: {mass_target} [kg]")
     v_opt_list = []
     AR_opt_list = []
     x_TO_list = []
@@ -23,7 +25,7 @@ for mass_target in MASS_TARGETS:
             # minimize mass error
             def obj_mass_error(x):
                 v, ar = x
-                plane = Airplane(v, ar)
+                plane = Airplane(v, ar, mass_target * g)
                 _, masses = plane.runner()
                 return abs(sum(masses) - mass_target)
 
@@ -32,11 +34,11 @@ for mass_target in MASS_TARGETS:
                 x0,
                 method="L-BFGS-B",
                 bounds=bounds,
-                options={"ftol": 1e-3, "gtol": 1e-3, "maxfun": 50},
+                options={"ftol": 1e-1, "gtol": 1e-1, "maxfun": 25},
             )
 
             v_best, AR_best = res.x
-            plane = Airplane(v_best, AR_best)
+            plane = Airplane(v_best, AR_best, W=mass_target * g)
             x_TO, masses = plane.runner()
             mass_error = abs(sum(masses) - mass_target)
 
@@ -67,15 +69,15 @@ colors = plt.cm.viridis(np.linspace(0, 1, len(MASS_TARGETS)))
 
 for i, res in enumerate(pareto_results):
     plt.scatter(
-        res["v_cruise"],
         res["AR"],
+        res["v_cruise"],
         s=50,
         color=colors[i],
         label=f"{(res['mass_target'])} kg",
     )
 
-plt.xlabel("Cruise Velocity (m/s)")
-plt.ylabel("Aspect Ratio (AR)")
+plt.xlabel("Aspect Ratio (AR)")
+plt.ylabel("Cruise Velocity (m/s)")
 plt.title("Pareto-like Front: v_cruise vs AR for each Mass Target")
 plt.legend()
 plt.grid(True)
@@ -89,6 +91,11 @@ for i, res in enumerate(pareto_results):
         s=50,
         color=colors[i],
         label=f"{res['mass_target']} kg",
+    )
+    plt.plot(
+        res["v_cruise"],
+        res["x_TO"],
+        color=colors[i],
     )
 
 plt.xlabel("Cruise Velocity (m/s)")
