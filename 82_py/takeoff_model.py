@@ -7,7 +7,7 @@ from ambiance import Atmosphere
 
 # Define the Takeoff model class
 class TakeoffModel:
-    def __init__(self, T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO): # , CD0, AR, e):
+    def __init__(self, T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO):  # , CD0, AR, e):
         # Inputs (knowns)
         self.T_W_takeoff = T_W_takeoff
         self.W_S = W_S
@@ -29,7 +29,7 @@ class TakeoffModel:
         self.v0 = 15.0  # Lower bound for thrust calculation to prevent unrealistic values at very low cruise speeds
 
         # Derived Quantities
-        self.S = self.W / self.W_S  # Wing area (m^2)
+        self.S = self.W / (self.W_S * g)  # Wing area (m^2)
         self.T_takeoff = self.W * self.T_W_takeoff  # Takeoff thrust (N)
 
         # Placeholders

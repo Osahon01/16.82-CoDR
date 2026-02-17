@@ -113,7 +113,7 @@ class ClimbModel:
         :param self: Description
         """
         P_req = self.required_total_power()
-        P_gen_eff = self.eta_generator * self.P_generator
+        P_gen_eff = self.eta_generator * self.P_generator.to("W").magnitude
 
         P_bat_eff = P_req - P_gen_eff
 

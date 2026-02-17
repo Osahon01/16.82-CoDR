@@ -24,7 +24,7 @@ W = 12500 * 4.445  # N (converted from lbs)
 W_S = 100  # kg/m^2
 T_W = 0.3
 h_cruise = 3048.0 * ureg("m")  # 10,000 ft in meters
-gamma = math.radians(15.0)  # Climb angle in radians
+gamma = math.radians(25.0)  # Climb angle in radians
 eta_battery = 0.95
 eta_generator = 0.92
 eta_v_prop = 0.7
@@ -40,7 +40,7 @@ rho_cruise = Atmosphere(h=h_cruise.magnitude).density[0]  # in SI units
 
 # Climb Model Constants
 v_climb_vertical = (
-    15.0  # m/s, vertical climb velocity (to be updated with more detailed model)
+    25.0  # m/s, vertical climb velocity (to be updated with more detailed model)
 )
 CD_climb = 0.1  # Assumed constant drag coefficient during climb (to be updated with more detailed model)
 
@@ -73,7 +73,7 @@ class Airplane:
         )
         drag = cruise.drag_total()
         CD_total = cruise.cd_total()
-        return drag, CD_total
+        return drag.to("N"), CD_total
 
     def run_power_model(self, CD_total):
         cfg = AircraftConfig(
@@ -81,7 +81,7 @@ class Airplane:
             V_cruise=self.v_cruise,
             alt_cruise_m=h_cruise,
             Cd=CD_total,
-            mass_kg=W / g * ureg("kg"),
+            mass_kg=(W / g) * ureg("kg"),
             wing_loading_kgm2=W_S * ureg("kg/m^2"),
             eta_prop=eta_v_prop * eta_add_prop,
             eta_motor=0.95,
@@ -123,7 +123,7 @@ class Airplane:
 
     def run_takeoff_model(self, p_gen, p_bat):
         P_shaft_TO = p_gen * eta_generator + p_bat * eta_battery
-        takeoff = TakeoffModel(self.T_W, W_S, W, P_shaft_TO, CLTO, CDTO)
+        takeoff = TakeoffModel(T_W, W_S, W, P_shaft_TO, CLTO, CDTO)
         takeoff_distance = takeoff.takeoff_distance()
         return takeoff_distance
 
@@ -151,10 +151,21 @@ class Airplane:
         x_TO = self.run_takeoff_model(p_gen, p_bat)
         L_max = W
         spar_mass, skin_mass = self.run_wing_structural_model(L_max)
-        masses = np.array([m_gen, m_bat, m_fuel, spar_mass, skin_mass])
+        masses = np.array(
+            [
+                m_gen.magnitude,
+                m_bat.magnitude,
+                m_fuel.magnitude,
+                spar_mass,
+                float(skin_mass),
+            ]
+        )
         return x_TO, masses
 
 
-drela_forehead = Airplane(v_cruise=80, AR=10)
-print(drela_forehead.runner())
-print(f"Cruise model test: {drela_forehead.run_cruise_model()}")
+drela_forehead = Airplane(v_cruise=100, AR=10)
+# print(drela_forehead.runner())
+x_TO, masses = drela_forehead.run_cruise_model()
+print(
+    f"{50 * '='}\nCruise model test\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses, 2)}\n{50 * '='}"
+)

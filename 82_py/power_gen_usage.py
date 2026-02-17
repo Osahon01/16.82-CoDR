@@ -66,7 +66,7 @@ class DEPSizingModel:
             Atmosphere(h=(cfg.alt_cruise_m.magnitude)).density[0]
         ) * ureg("kg/m^3")
         q = 0.5 * mission_cls.rho_cruise_kgm3 * (cfg.V_cruise) ** 2
-        mission_cls.thrust_required_N = q * mission_cls.wing_area_m2 * cfg.Cd.magnitude
+        mission_cls.thrust_required_N = q * mission_cls.wing_area_m2 * cfg.Cd
 
         # power calcs
         P_thrust = mission_cls.thrust_required_N * cfg.V_cruise
