@@ -73,12 +73,13 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         double LD_cruise = (m*g)/(D_cruise);
         double Vj_cruise = std::pow((2*D_cruise)/(rho_10k*A_d)+V_cruise*V_cruise,0.5);
         double eta_fr_cruise = (2*V_cruise)/(Vj_cruise+V_cruise);
+        double P_cruise_shaft = (D_cruise*V_cruise) / eta_fr_cruise;
         double Range = ((h_avgas*eta_gen*eta_fr_cruise*0.95)/g)*LD_cruise*std::log(1./(1.+(-1.*f)));
 
         double con_min_range = 2420000 - Range;
 
         double m_struc = 1000. * (S_wet / 140.);
-        double m_prop = P_TO_shaft / P_spec_prop;
+        double m_prop = std::max(P_TO_shaft,P_cruise_shaft) / P_spec_prop;
         double m_calc_nofuel = m_struc+m_prop+m_pax;
         double m_calc = m_calc_nofuel / (1-f);
         double resid_mass = m_calc - m;

@@ -17,7 +17,7 @@ int main() {
     problem_fvd pfvd_obj;
     pfvd_obj.min_V_cruise = 125.;
 
-    pagmo::vector_double x1 = {4908.15,0.543647,40.8389,9.61111,24111.9,17.5129,0.732614,40.7335,6.92581,0.158279};
+    pagmo::vector_double x1 = {8260.27,0.597822,105.238,6.73066,25193.1,11.0429,0.716945,53.9623,10.8699,0.105031};
     pfvd_obj.fitness(x1);
 
     // Design variable headers
@@ -57,6 +57,7 @@ int main() {
         pagmo::problem pfvd{pfvd_obj};
 
         algorithm algo{gaco(10000, 63, 1, 0, 0.01, 1U, 7, 10000)};
+        algo.set_seed(42069);
         archipelago archi(32u, algo, pfvd, 10000u);
         archi.evolve(1);
         archi.wait_check();
