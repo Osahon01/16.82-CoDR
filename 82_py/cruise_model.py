@@ -16,12 +16,11 @@ ureg = UnitRegistry()
 
 class CruiseModel:
     def __init__(self, s_ref, weight, v_cruise, h_cruise, AR, e, Cd0) -> None:
-        self.atm = Atmosphere(h=h_cruise)
-        self.s_ref = s_ref
-        self.weight = weight  # newtons
-        self.v_cruise = v_cruise
+        self.s_ref = s_ref * ureg("m^2")
+        self.weight = weight * ureg("N")  # newtons
+        self.v_cruise = v_cruise.magnitude * ureg("m/s")
         self.h_cruise = h_cruise
-        self.density = self.atm.density
+        self.density = Atmosphere(h=h_cruise.magnitude).density[0] * ureg("kg/m^3")
         self.AR = AR
         self.e = e
         self.q = 0.5 * self.density * (self.v_cruise**2)

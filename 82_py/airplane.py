@@ -58,7 +58,7 @@ class Airplane:
     def __init__(self, v_cruise, AR):
         self.v_cruise = v_cruise * ureg("m/s")
         self.AR = AR
-        self.S = W / W_S  # Wing area (m^2)
+        self.S = (W / W_S) / g  # Wing area (m^2)
         self.T = W * T_W  # Takeoff thrust (N)
 
     def run_cruise_model(self):
@@ -93,7 +93,7 @@ class Airplane:
             LHV_MJ_per_kg=42 * ureg("MJ/kg"),
         )
 
-        power_cls = DEPSizingModel.compute_performance(cfg)
+        power_cls = DEPSizingModel().compute_performance(cfg)
 
         return (
             power_cls.P_gen_elec_kW,
@@ -114,7 +114,8 @@ class Airplane:
             h_cruise=h_cruise,
             S=self.S,
             v=v_climb_vertical,
-        )
+            W=W,
+        )  # pyright: ignore[reportCallIssue]
         time_of_climb = climb.time_of_climb()
         m_battery = climb.get_m_battery()
         p_bat = climb.battery_power_required()
@@ -155,4 +156,5 @@ class Airplane:
 
 
 drela_forehead = Airplane(v_cruise=80, AR=10)
-# print(f'Cruise model test: {drela_forehead.run_cruise_model()}')
+print(drela_forehead.runner())
+print(f"Cruise model test: {drela_forehead.run_cruise_model()}")

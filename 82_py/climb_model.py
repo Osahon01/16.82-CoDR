@@ -1,5 +1,7 @@
 import math
 import numpy as np
+from ambiance import Atmosphere
+from CoDR_equations import g
 
 
 class ClimbModel:
@@ -12,7 +14,7 @@ class ClimbModel:
         Thrust-to-weight ratio (dimensionless).
     C_D : float
         Drag coefficient (dimensionless).
-    S_W : float
+    W_S : float
         Wing loading expressed as S/W (m^2/N).
     gamma : float
         Climb angle (radians).
@@ -33,7 +35,7 @@ class ClimbModel:
     def __init__(
         self,
         C_D,
-        S_W,
+        W_S,
         gamma,
         P_generator,
         eta_generator,
@@ -42,10 +44,11 @@ class ClimbModel:
         h_cruise,
         S,
         v,
+        W,
     ):
-        self.T_W = T_W
+        # self.T_W = T_W
         self.C_D = C_D
-        self.S_W = S_W
+        self.W_S = W_S
         self.gamma = gamma
         self.P_generator = P_generator
         self.eta_generator = eta_generator
@@ -54,27 +57,9 @@ class ClimbModel:
         self.h_cruise = h_cruise
         self.S = S
         self.v = v
+        self.W = W
 
         self.g = 9.80665  # m/s^2
-
-    def rho_isa(self):
-        """
-        ISA density at h_cruise (troposphere model).
-        """
-        h = self.h_cruise
-
-        T0 = 288.15  # K
-        p0 = 101325.0  # Pa
-        L = 0.0065  # K/m
-        R = 287.05287  # J/(kg*K)
-
-        T = T0 - L * h
-        if T <= 0:
-            raise ValueError("Non-physical ISA temperature at this altitude.")
-
-        p = p0 * (T / T0) ** (self.g / (R * L))
-        rho = p / (R * T)
-        return rho
 
     def combined_thrust_from_power(self, v):
         """
@@ -99,7 +84,7 @@ class ClimbModel:
     #     sin_g = math.sin(self.gamma)
 
     #     numerator = self.T_W - sin_g
-    #     denominator = 0.5 * rho * self.S_W * self.C_D
+    #     denominator = 0.5 * rho * self.W_S * self.C_D
 
     #     if denominator <= 0:
     #         raise ValueError("Invalid aerodynamic parameters.")
@@ -114,13 +99,12 @@ class ClimbModel:
         Total required power for entire climb
         """
         v = self.v
-        W = self.S / self.S_W
-        rho = self.rho_isa()
+        rho = Atmosphere(h=self.h_cruise.magnitude).density
         q = 0.5 * rho * v**2
         D = self.C_D * (q * self.S)
 
         P_drag = D * v
-        P_climb = W * v * np.sin(self.gamma)
+        P_climb = self.W * v * np.sin(self.gamma)
 
         return P_drag + P_climb
 
@@ -195,7 +179,7 @@ class ClimbModel:
     model = ClimbModel(
         T_W=0.30,
         C_D=0.03,
-        S_W=1.2e-3,
+        W_S=1.2e-3,
         gamma=gamma,
         P_generator=80_000.0,
         eta_generator=0.92,

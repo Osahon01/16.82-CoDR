@@ -62,7 +62,7 @@ class DEPSizingModel:
         )  # wing area from mass wing loading
 
         # cruise drag -> thrust required
-        mission_cls.rho_cruise_kgm3 = float(
+        mission_cls.rho_cruise_kgm3 = (
             Atmosphere(h=(cfg.alt_cruise_m.magnitude)).density[0]
         ) * ureg("kg/m^3")
         q = 0.5 * mission_cls.rho_cruise_kgm3 * (cfg.V_cruise) ** 2
@@ -83,8 +83,8 @@ class DEPSizingModel:
         ).to("MWh")
 
         E_MJ = mission_cls.cruise_energy_MWh.to("MJ")  # convert MWh back to MJ
-        mission_cls.fuel_mass_cruise_kg = (
-            E_MJ / (cfg.eta_apu_overall * cfg.LHV_MJ_per_kg) * ureg("kg")
+        mission_cls.fuel_mass_cruise_kg = E_MJ / (
+            cfg.eta_apu_overall * cfg.LHV_MJ_per_kg
         )
 
         mission_cls.fuel_flow_cruise_kg_hr = mission_cls.fuel_mass_cruise_kg / (
