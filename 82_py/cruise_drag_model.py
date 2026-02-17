@@ -4,7 +4,7 @@ from ambiance import Atmosphere
 
 # (Assumed) Constants
 pi = np.pi
-AR = np.linspace(5, 15, 500)
+AR = 9.7 # Caravan like
 e = 0.7
 
 # Aircraft parameters (Caravan-like)
@@ -53,7 +53,7 @@ D_total = D_i + D_p
 
 
 # Plot
-PLOT = False
+PLOT = True
 if PLOT:
     plt.figure(figsize=(8, 6))
     plt.plot(V_CRUISE_VEC, D_i, label="Induced Drag")
@@ -63,7 +63,6 @@ if PLOT:
     plt.ylabel("Drag (N)")
     plt.title("Drag vs Velocity")
     plt.legend()
-    plt.grid()
     plt.show()
 
 
@@ -80,4 +79,4 @@ def AR_opt():
 
 
 print(f"{40 * '='}\nVelocity at Minimum Cruise Drag: {v_opt()}, m/s\n{40 * '='}\n")
-print(f"{40 * '='}\nAR at Minimum Cruise Drag: {AR_opt()}\n{40 * '='}")
+# print(f"{40 * '='}\nAR at Minimum Cruise Drag: {AR_opt()}\n{40 * '='}")
