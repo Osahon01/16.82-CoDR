@@ -167,6 +167,6 @@ drela_forehead = Airplane(v_cruise=100, AR=10)
 x_TO, masses = drela_forehead.runner()
 drag, CD_total = drela_forehead.run_cruise_model()
 print(
-    f"{50 * '='}\nCruise model test\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses, 2)}"
-    f"\nx_T0: {round(x_TO, 2)}\nmasses: {(masses).sum(axis=0)}\n{50 * '='}"
+    f"{50 * '='}\nCruise model test\nDrag: {round(drag, 2)}\nCD_total: {(round(CD_total, 2))}"
+    f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(sum(masses), 2)}\n{50 * '='}"
 )
