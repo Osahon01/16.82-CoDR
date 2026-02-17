@@ -4,86 +4,150 @@ import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from CoDR_equations import g
 
-MASS_TARGETS = np.linspace(4500, 8000, 2)
-V_SWEEP = np.linspace(50, 130, 2)
+
+MASS_TARGETS = np.linspace(4000, 8000, 10)
+V_SWEEP = np.linspace(50, 130, 10)
 
 
 # for fixed run 1
-AR_SWEEP = np.linspace(4, 15, 2)
+AR_SWEEP = np.linspace(4, 15, 10)
 W_S_FIXED = 130
 
 # for fixed run 2
-AR_FIXED = 9
-W_S_SWEEP = np.linspace(50, 90, 2)
+AR_FIXED = 10
+W_S_SWEEP = np.linspace(50, 90, 10)
+
 
 pareto_results_ar = []
 pareto_results_ws = []
-bounds1 = [(50, 130), (4, 15)]  # for ar and vcruise sweep
-bounds2 = [(50, 130), (50, 90)]  # for w/s and vcruise sweep
 
 
-# minimize mass error
-def obj_mass_error1(x):
-    v, ar = x
-    plane = Airplane(v, AR=ar, W=weight, W_S=W_S_FIXED)
-    _, masses = plane.runner()
-    return abs(sum(masses) - mass_target)
+bounds1 = [(50, 130), (4, 15)]  # vcruise and AR ICS
+bounds2 = [(50, 130), (50, 90)]  # vcruise and W_S ICS
 
 
-def obj_mass_error2(x):
-    v, w_s = x
-    plane = Airplane(v, AR=AR_FIXED, W=weight, W_S=w_s)
-    _, masses = plane.runner()
-    return abs(sum(masses) - mass_target)
+def make_obj_mass_error1(weight, mass_target):
+    def obj(x):
+        v, ar = x
+
+        plane = Airplane(
+            v,
+            AR=ar,
+            W=weight,
+            W_S=W_S_FIXED,
+        )
+        _, masses = plane.runner()
+        m = np.sum(masses)
+        return np.abs(m - mass_target)  # normalized for stability
+
+    return obj
+
+
+def make_obj_mass_error2(weight, mass_target):
+    def obj(x):
+        v, w_s = x
+
+        plane = Airplane(
+            v,
+            AR=AR_FIXED,
+            W=weight,
+            W_S=w_s,
+        )
+
+        _, masses = plane.runner()
+        m = np.sum(masses)
+        return np.abs(m - mass_target)
+
+    return obj
 
 
 def optimizer_loop(
     v=False,
     ar=False,
     weight=0.0,
-    v_opt_list=[],
-    AR_opt_list=[],
-    x_TO_list=[],
-    mass_error_list=[],
-    w_s=W_S_SWEEP,
+    v_opt_list=None,
+    AR_opt_list=None,
+    x_TO_list=None,
+    mass_error_list=None,
 ):
+    if v_opt_list is None:
+        v_opt_list = []
+        AR_opt_list = []
+        x_TO_list = []
+        mass_error_list = []
+
+    # w/s optimization
     if not ar:
+        obj = make_obj_mass_error2(weight, mass_target)
         for ws0 in W_S_SWEEP:
             x0 = [v0, ws0]
             res = minimize(
-                obj_mass_error2,
+                obj,
                 x0,
                 method="L-BFGS-B",
                 bounds=bounds2,
-                options={"ftol": 1e-1, "gtol": 1e-1, "maxfun": 25},
+                options={
+                    "ftol": 1e-3,
+                    "gtol": 1e-3,
+                    "maxfun": 500,
+                },
             )
 
-            v_best, AR_best = res.x
-            plane = Airplane(v_best, AR_best, W=weight)
+            if not res.success:
+                continue
+
+            v_best, w_s_best = res.x
+
+            plane = Airplane(
+                v_best,
+                AR=AR_FIXED,
+                W=weight,
+                W_S=w_s_best,
+            )
+
             x_TO, masses = plane.runner()
-            mass_error = abs(sum(masses) - mass_target)
+
+            mass_error = abs(np.sum(masses) - mass_target)
 
             v_opt_list.append(v_best)
-            AR_opt_list.append(AR_best)
+            AR_opt_list.append(w_s_best)
             x_TO_list.append(x_TO)
             mass_error_list.append(mass_error)
 
         return v_opt_list, AR_opt_list, x_TO_list, mass_error_list
 
+    # AR optimization
+    obj = make_obj_mass_error1(weight, mass_target)
+
     for ar0 in AR_SWEEP:
         x0 = [v0, ar0]
+
         res = minimize(
-            obj_mass_error1,
+            obj,
             x0,
             method="L-BFGS-B",
             bounds=bounds1,
-            options={"ftol": 1e-1, "gtol": 1e-1, "maxfun": 25},
+            options={
+                "ftol": 1e-3,
+                "gtol": 1e-3,
+                "maxfun": 500,
+            },
         )
 
+        if not res.success:
+            continue
+
         v_best, AR_best = res.x
-        plane = Airplane(v_best, AR_best, W=weight)
+
+        plane = Airplane(
+            v_best,
+            AR=AR_best,
+            W=weight,
+        )
+
         x_TO, masses = plane.runner()
-        mass_error = abs(sum(masses) - mass_target)
+
+        mass_error = abs(np.sum(masses) - mass_target)
 
         v_opt_list.append(v_best)
         AR_opt_list.append(AR_best)
@@ -95,26 +159,14 @@ def optimizer_loop(
 
 for mass_target in MASS_TARGETS:
     print(f"Optimizing for mass closure: {mass_target} [kg]")
+
     v_opt_list_ar, AR_opt_list_ar, x_TO_list_ar, mass_error_list_ar = [], [], [], []
     v_opt_list_ws, AR_opt_list_ws, x_TO_list_ws, mass_error_list_ws = [], [], [], []
 
     for v0 in V_SWEEP:
         weight = mass_target * g
 
-        # aspect ratio
-        v_opt_list_ar, AR_opt_list_ar, x_TO_list_ar, mass_error_list_ar = (
-            optimizer_loop(
-                v=v0,
-                ar=True,
-                weight=weight,
-                v_opt_list=v_opt_list_ar,
-                AR_opt_list=AR_opt_list_ar,
-                x_TO_list=x_TO_list_ar,
-                mass_error_list=mass_error_list_ar,
-            )
-        )
-
-        # wing loading
+        # wing loading opt
         v_opt_list_ws, AR_opt_list_ws, x_TO_list_ws, mass_error_list_ws = (
             optimizer_loop(
                 v=v0,
@@ -127,29 +179,25 @@ for mass_target in MASS_TARGETS:
             )
         )
 
-    v_opt_list_ar = np.array(v_opt_list_ar)
-    AR_opt_list_ar = np.array(AR_opt_list_ar)
-    x_TO_list_ar = np.array(x_TO_list_ar)
-    mass_error_list_ar = np.array(mass_error_list_ar)
-
-    feasible_mask_ar = mass_error_list_ar < 50  # kg tolerance
-
-    pareto_results_ar.append(
-        {
-            "mass_target": mass_target,
-            "v_cruise": v_opt_list_ar[feasible_mask_ar],
-            "AR": AR_opt_list_ar[feasible_mask_ar],
-            "x_TO": x_TO_list_ar[feasible_mask_ar],
-            "mass_error": mass_error_list_ar[feasible_mask_ar],
-        }
-    )
+        # ar optimization
+        v_opt_list_ar, AR_opt_list_ar, x_TO_list_ar, mass_error_list_ar = (
+            optimizer_loop(
+                v=v0,
+                ar=True,
+                weight=weight,
+                v_opt_list=v_opt_list_ar,
+                AR_opt_list=AR_opt_list_ar,
+                x_TO_list=x_TO_list_ar,
+                mass_error_list=mass_error_list_ar,
+            )
+        )
 
     v_opt_list_ws = np.array(v_opt_list_ws)
     AR_opt_list_ws = np.array(AR_opt_list_ws)
     x_TO_list_ws = np.array(x_TO_list_ws)
     mass_error_list_ws = np.array(mass_error_list_ws)
 
-    feasible_mask_ws = mass_error_list_ws < 50  # kg tolerance
+    feasible_mask_ws = mass_error_list_ws < 50
 
     pareto_results_ws.append(
         {
@@ -161,45 +209,67 @@ for mass_target in MASS_TARGETS:
         }
     )
 
-# AR plot
-plt.figure(figsize=(8, 6))
+    v_opt_list_ar = np.array(v_opt_list_ar)
+    AR_opt_list_ar = np.array(AR_opt_list_ar)
+    x_TO_list_ar = np.array(x_TO_list_ar)
+    mass_error_list_ar = np.array(mass_error_list_ar)
+
+    feasible_mask_ar = mass_error_list_ar < 50
+
+    pareto_results_ar.append(
+        {
+            "mass_target": mass_target,
+            "v_cruise": v_opt_list_ar[feasible_mask_ar],
+            "AR": AR_opt_list_ar[feasible_mask_ar],
+            "x_TO": x_TO_list_ar[feasible_mask_ar],
+            "mass_error": mass_error_list_ar[feasible_mask_ar],
+        }
+    )
+
 colors = plt.cm.viridis(np.linspace(0, 1, len(MASS_TARGETS)))
 
+plt.figure(figsize=(8, 6))
 for i, res in enumerate(pareto_results_ar):
     plt.scatter(
         res["AR"],
         res["v_cruise"],
         s=50,
         color=colors[i],
-        label=f"{(res['mass_target'])} kg",
+        label=f"{round(res['mass_target'], 2)} kg",
     )
 
-plt.xlabel("Aspect Ratio (AR)")
-plt.ylabel("Cruise Velocity (m/s)")
-plt.title("Pareto-like Front: v_cruise vs AR for each Mass Target")
+    # plt.plot(
+    #     res["AR"],
+    #     res["v_cruise"],
+    #     color=colors[i],
+    # )
+
+
+plt.xlabel("AR")
+plt.ylabel("Cruise Velocity")
+plt.title("Cruise Velocity vs AR")
 plt.legend()
-plt.grid(True)
 plt.show()
 
-# W/S variation plot
 plt.figure(figsize=(8, 6))
 for i, res in enumerate(pareto_results_ws):
     plt.scatter(
-        res["v_cruise"],
         res["x_TO"],
+        res["v_cruise"],
         s=50,
         color=colors[i],
-        label=f"{res['mass_target']} kg",
-    )
-    plt.plot(
-        res["v_cruise"],
-        res["x_TO"],
-        color=colors[i],
+        label=f"{round(res['mass_target'], 2)} kg",
     )
 
-plt.xlabel("Cruise Velocity (m/s)")
-plt.ylabel("Takeoff Distance x_TO (m)")
-plt.title("Takeoff Distance vs Cruise Velocity (feasible designs)")
+    # plt.plot(
+    #     res["x_TO"],
+    #     res["v_cruise"],
+    #     color=colors[i],
+    # )
+
+
+plt.xlabel("Takeoff Distance (m)")
+plt.ylabel("Cruise Velocity (m/s)")
+plt.title("Cruise Velocity vs Takeoff Distance")
 plt.legend()
-plt.grid(True)
 plt.show()
