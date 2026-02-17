@@ -1,7 +1,6 @@
 #ifndef FVD_FITNESS
 #define FVD_FITNESS
 
-// #define FVD_EVAL
 
 #include <pagmo/problem.hpp>
 #include <pagmo/types.hpp>

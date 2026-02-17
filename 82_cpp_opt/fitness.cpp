@@ -12,12 +12,12 @@ vector_double::size_type problem_fvd::get_nec() const{
     return 2;
 }
 vector_double::size_type problem_fvd::get_nic() const{
-    return 1;
+    return 3;
 }
 
 std::pair<vector_double, vector_double> problem_fvd::get_bounds() const{
     vector_double lb = {1500.,0.,10.,3.,0.,-5.,0.,30.,0.,0.};
-    vector_double ub = {5000.,1.,50.,15.,50000.,20.,1.,60.,20.,1.4};
+    vector_double ub = {5000.,1.,500.,15.,50000.,20.,1.,60.,20.,1.4};
     std::pair<vector_double, vector_double> ret(lb,ub);
     return ret;
 }
@@ -52,9 +52,11 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         double b = std::pow(AR*S,0.5);
         double c = b/AR;
         double A_d = b*h_d;
-        double S_wet = S*(1.2) + 69.;// The 69 is a rough estimate for the fusl area of the EL9
+        double S_wet = 2.*S*(1.2) + 69.;// The 69 is a rough estimate for the fusl area of the EL9
         // Calculate TO velocity and required jet velocity to make thrust, and finally delta CJ
         double V_TO = std::pow((2*m*g)/(S*CL_TO*rho_0k),0.5);
+        double Tprimec_TO = T_TO / (0.5*rho_0k*V_TO*V_TO*S);
+        double con_max_Tprimec_TO = Tprimec_TO - 3.5;
         double Vj_TO = std::pow((2*T_TO)/(rho_0k*A_d)+V_TO*V_TO,0.5);
         double delta_CJ_TO = ((2*h_d)/c)*((Vj_TO/V_TO)*(Vj_TO/V_TO)-1);
         // Use models to get the blown CL and enforce closure via residual
@@ -67,11 +69,11 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
 
         double q_cruise = (m*g)/(S*CL_cruise);
         double V_cruise = std::pow((2*q_cruise)/rho_10k,0.5);
-        double D_cruise = S_wet*Cd_v*q_cruise + (CL_cruise*CL_cruise)/(M_PI*spaneff*AR);
+        double D_cruise = S_wet*Cd_v*q_cruise + ((CL_cruise*CL_cruise)/(M_PI*spaneff*AR))*q_cruise*S;
         double LD_cruise = (m*g)/(D_cruise);
         double Vj_cruise = std::pow((2*D_cruise)/(rho_10k*A_d)+V_cruise*V_cruise,0.5);
         double eta_fr_cruise = (2*V_cruise)/(Vj_cruise+V_cruise);
-        double Range = ((h_avgas*eta_gen*eta_fr_cruise*0.95)/g)*LD_cruise*std::log(1./f);
+        double Range = ((h_avgas*eta_gen*eta_fr_cruise*0.95)/g)*LD_cruise*std::log(1./(1.+(-1.*f)));
 
         double con_min_range = 2420000 - Range;
 
@@ -80,9 +82,15 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         double m_calc_nofuel = m_struc+m_prop+m_pax;
         double m_calc = m_calc_nofuel / (1-f);
         double resid_mass = m_calc - m;
+        double con_min_V_cruise = 125. - V_cruise;
 
         // Package objective and constraint values
-        vector_double ret = {x_TO,resid_CL_TO,resid_mass,con_min_range};
+        vector_double ret = {x_TO,
+                            resid_CL_TO,
+                            resid_mass,
+                            con_min_range,
+                            con_max_Tprimec_TO,
+                            con_min_V_cruise};
         // A physically impossible situation will usually result in a bunch of NaNs,
         // and bad inputs might give Inf due to division by zero.
         // If this happens, return a big penalty
