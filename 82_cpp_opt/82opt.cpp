@@ -2,40 +2,89 @@
 
 #include <iostream>
 #include <chrono>
+#include <fstream>  // For file output
 
 #include <pagmo/algorithm.hpp>
-
 #include <pagmo/algorithms/sade.hpp>
 #include <pagmo/archipelago.hpp>
 #include <pagmo/problem.hpp>
 #include <pagmo/algorithms/gaco.hpp>
 #include <pagmo/population.hpp>
+#include <limits>
 
-int main(){
+int main() {
 
     problem_fvd pfvd_obj;
+    pfvd_obj.min_V_cruise = 125.;
 
-    // Put stuff here which only is for debugging / output inspection
-    // Basically anything that shouldn't be slowing down the main optimizer loop    pagmo::vector_double x1 = {4648.1, 136.75, 1099.75, 0.0150023, 0.0507001, 0.00750535, 0.0799953, 73.5045, 0.0511641, 0.0774573, 0.00759833, 0.0576068, };
-    
-    pagmo::vector_double x1 = {4823.46, 0.532962, 38.7987, 13.5026, 28644.5, -1.15711, 0.601813, 51.8072, 5.21805, 0.172021, };
-    pfvd_obj.fitness(x1);
+    // Design variable headers
+    const char* headers[] = {
+        "min_V_cruise",
+        "best_takeoff",
+        "m",
+        "f",
+        "S",
+        "AR",
+        "T_TO",
+        "alpha_TO",
+        "h_d",
+        "delta_F_TO",
+        "CL_TO",
+        "CL_cruise"
+    };
 
-    pagmo::problem pfvd{pfvd_obj};
-    std::cout << pfvd;
-    algorithm algo{gaco(10000,63,1,0,0.01,1U,7,10000)};    
-    archipelago archi(32u, algo, pfvd, 10000u);
-    archi.evolve(1);
-    archi.wait_check();
-
-    for (const auto &isl : archi) {
-        std::cout << isl.get_population().champion_f()[0] << '\n';
-        pagmo::vector_double ch_x = isl.get_population().champion_x();
-        std::cout << "{";
-        for(int i =0; i<ch_x.size(); i++){
-            std::cout << ch_x[i] << ", ";
-        }
-        std::cout << "}\n";
+    // Open CSV file
+    std::ofstream outfile("results.csv");
+    if (!outfile.is_open()) {
+        std::cerr << "Failed to open output file.\n";
+        return 1;
     }
+
+    // Write headers
+    for (int i = 0; i < 12; i++) {
+        outfile << headers[i];
+        if (i < 11) outfile << ",";
+        else outfile << "\n";
+    }
+
+    double min_V_cruises[] = {50., 75., 100., 125., 150., 175., 200.};
+
+    for (auto min_V_cruise : min_V_cruises) {
+        pfvd_obj.min_V_cruise = min_V_cruise;
+        pagmo::problem pfvd{pfvd_obj};
+
+        algorithm algo{gaco(10000, 63, 1, 0, 0.01, 1U, 7, 10000)};
+        archipelago archi(32u, algo, pfvd, 10000u);
+        archi.evolve(1);
+        archi.wait_check();
+
+        auto best_takeoff_dist = std::numeric_limits<double>::infinity();
+        pagmo::vector_double best_plane;
+
+        for (const auto &isl : archi) {
+            auto curr_dist = isl.get_population().champion_f()[0];
+            if (curr_dist < best_takeoff_dist) {
+                best_plane = isl.get_population().champion_x();
+                best_takeoff_dist = curr_dist;
+            }
+        }
+
+        // Write results to CSV
+        outfile << min_V_cruise << "," << best_takeoff_dist << ",";
+        for (int i = 0; i < best_plane.size(); i++) {
+            outfile << best_plane[i];
+            if (i < best_plane.size() - 1) outfile << ",";
+        }
+        outfile << "\n";
+
+        // Optional: also print to console
+        std::cout << "Min v cruise : " << min_V_cruise << '\n';
+        std::cout << "Best takeoff : " << best_takeoff_dist << '\n';
+        std::cout << "=================================================================\n";
+    }
+
+    outfile.close();
+    std::cout << "Results written to results.csv\n";
+
     return 0;
 }

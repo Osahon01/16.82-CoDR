@@ -82,7 +82,7 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         double m_calc_nofuel = m_struc+m_prop+m_pax;
         double m_calc = m_calc_nofuel / (1-f);
         double resid_mass = m_calc - m;
-        double con_min_V_cruise = 125. - V_cruise;
+        double con_min_V_cruise = min_V_cruise - V_cruise;
 
         // Package objective and constraint values
         vector_double ret = {x_TO,
