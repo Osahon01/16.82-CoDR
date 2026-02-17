@@ -23,10 +23,10 @@ for i, res in enumerate(pareto_results_ar):
         color=colors[i],
         label=f"{round(res['mass_target'], 2)} kg",
     )
-plt.xlabel("AR")
-plt.ylabel("Cruise Velocity")
-plt.title("Cruise Velocity vs AR")
-plt.legend()
+plt.xlabel("AR", fontsize=16)
+plt.ylabel("Cruise Velocity", fontsize=16)
+plt.title("Cruise Velocity vs AR", fontsize=20)
+plt.legend(fontsize=16)
 plt.show()
 
 plt.figure()
@@ -38,8 +38,8 @@ for i, res in enumerate(pareto_results_ws):
         color=colors[i],
         label=f"{round(res['mass_target'], 2)} kg",
     )
-plt.xlabel("Takeoff Distance (m)")
-plt.ylabel("Cruise Velocity (m/s)")
-plt.title("Cruise Velocity vs Takeoff Distance")
-plt.legend()
+plt.xlabel("Takeoff Distance (m)", fontsize=16)
+plt.ylabel("Cruise Velocity (m/s)", fontsize=16)
+plt.title("Cruise Velocity vs Takeoff Distance", fontsize=20)
+plt.legend(fontsize=16)
 plt.show()
