@@ -4,10 +4,9 @@ from scipy.optimize import fsolve
 from CoDR_equations import g
 from ambiance import Atmosphere
 
-
 # Define the Takeoff model class
 class TakeoffModel:
-    def __init__(self, T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO):  # , CD0, AR, e):
+    def __init__(self, T_W_takeoff, W_S, W, P_shaft_TO, CLTO, CDTO, CMTO, AR, S):  # , CD0, AR, e):
         # Inputs (knowns)
         self.T_W_takeoff = T_W_takeoff
         self.W_S = W_S
@@ -15,9 +14,11 @@ class TakeoffModel:
         self.P_shaft_TO = P_shaft_TO
         self.CLTO = CLTO
         self.CDTO = CDTO
-        # self.CD0 = CD0  # Parasitic drag coefficient
-        # self.AR = AR  # Aspect ratio
-        # self.e = e  # Oswald efficiency factor
+        self.CMTO = CMTO
+        self.AR = AR
+        self.S = S
+        self.b = np.sqrt(AR * S)  # Wing span (m)
+        self.c = S / self.b  # Mean chord (m)
 
         # Constants
         self.g = g  # Acceleration due to gravity (m/s^2)
@@ -35,6 +36,7 @@ class TakeoffModel:
         # Placeholders
         self.v_TO = 0.0  # Placeholder for takeoff velocity, will be calculated based on CLTO and other parameters
         self.x_TO = 0.0  # (m) Placeholder for takeoff rolling distance
+        self.M_takeoff = 0.0  # Placeholder for takeoff moment/torque (N*m)
 
     def get_T_cruise(self, v):
         # Calculate cruise thrust using propeller power and efficiency
@@ -82,6 +84,7 @@ class TakeoffModel:
             L = 0.5 * self.rho_SL * v**2 * self.S * self.CLTO
             if L >= self.W:
                 self.v_TO = v  # Store takeoff velocity for later use
+                self.M_takeoff = self.CMTO * L * self.c  # Calculate takeoff moment/torque
                 return x
         return None
 
@@ -89,6 +92,10 @@ class TakeoffModel:
         # Calculate induced drag coefficient
         CDi = (CL**2) / (np.pi * self.AR * self.e)
         return CDi
+    
+    def get_torsion_moment(self):
+        # Calculate torsion moment at takeoff
+        return self.M_takeoff
 
     # Cruise model to be implemented elsewhere
     """def cruise_speed(self):
