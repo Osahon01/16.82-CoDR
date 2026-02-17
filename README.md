@@ -1,14 +1,7 @@
 # Aircraft Design & Mass Closure Optimization
 
-Aircraft sizing and optimization framework for preliminary hybrid-electric aircraft design. The repository combines physics-based subsystem models in Python with a high-performance C++ optimization backend.
+Aircraft sizing and optimization framework for a preliminary hybrid-electric aircraft design. The repository combines physics-based subsystem models coupling aerodynamic, structural, propulsion, and mission models to enforce mass closure and evaluate design feasibility across a constrained design space. A high-performance C++ optimization backend is used for large design sweeps.
 
----
-
-## Overview
-
-This project implements a Conceptual Design and Optimization Routine (CoDR) for a 9-passenger hybrid-electric regional aircraft. It couples aerodynamic, structural, propulsion, and mission models to enforce mass closure and evaluate design feasibility across a constrained design space.
-
----
 
 ## Repository Structure
 
