@@ -8,6 +8,13 @@
 
 using namespace pagmo;
 
+problem_fvd make_pfvd_obj(double v){
+    problem_fvd x;
+    x.min_V_cruise = v;
+    return x;
+}
+
+
 vector_double::size_type problem_fvd::get_nec() const{
     return 2;
 }

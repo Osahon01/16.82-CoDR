@@ -14,7 +14,7 @@
 
 int main() {
 
-    problem_fvd pfvd_obj;
+    auto pfvd_obj = make_pfvd_obj(125.);
     pfvd_obj.min_V_cruise = 125.;
 
     pagmo::vector_double x1 = {8260.27,0.597822,105.238,6.73066,25193.1,11.0429,0.716945,53.9623,10.8699,0.105031};

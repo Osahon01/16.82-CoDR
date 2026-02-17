@@ -63,4 +63,6 @@ struct problem_fvd{
         double delta_J_surr(double hd_S, double delta_F) const;
 };
 
+problem_fvd make_pfvd_obj(double v);
+
 #endif
