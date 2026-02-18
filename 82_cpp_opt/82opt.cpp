@@ -67,7 +67,7 @@ int main() {
 
     // Design variable headers
     std::vector<std::string> headers = {
-        "min_V_cruise",
+        "Range",
         "best_takeoff",
         "m",
         "f",
@@ -99,13 +99,16 @@ int main() {
                             2420e+3*1.5, 
                             2420e+3*2., 
                             2420e+3*2.5, 
-                            2420e+3*3., 
+                            2420e+3*3.,  
+                            2420e+3*3.5, 
+                            2420e+3*4., 
+                            2420e+3*4.5,
                         };
 
-    for (auto min_Param : min_V_cruises) {
+    for (auto min_Param : min_Ranges) {
         int n_tries = 0;
         retry:
-        pfvd_obj.min_V_cruise = min_Param;
+        pfvd_obj.min_Range = min_Param;
         pagmo::problem pfvd{pfvd_obj};
         algorithm inner_algo{sade(300)};
         algorithm algo{
@@ -139,18 +142,17 @@ int main() {
             }
         }
         if((pfvd_obj.fitness(best_plane)[1] > 1e-5 || 
-            pfvd_obj.fitness(best_plane)[2] > 1e-5 || 
-            std::abs(pfvd_obj.fitness(best_plane)[5]) > 1. ) && n_tries<5){
+            pfvd_obj.fitness(best_plane)[2] > 1e-5 ) && n_tries<10){
             n_tries++;
             std::cout<<"Residuals too big, retrying\n";
             std::cout << "CL_TO residual : " << pfvd_obj.fitness(best_plane)[1] << '\n';
             std::cout << "Mass residual : " << pfvd_obj.fitness(best_plane)[2] << '\n';
-            std::cout << "Velocity deficit : " << pfvd_obj.fitness(best_plane)[5] << '\n';
+            std::cout << '\n';
             goto retry;
         }
 
         // Optional: also print to console
-        std::cout << "Min cruise velocity : " << min_Param << '\n';
+        std::cout << "Min range : " << min_Param << '\n';
         std::cout << "Best takeoff : " << best_takeoff_dist << '\n';
         std::cout << "Best design : {";
         for (int i = 0; i < best_plane.size(); i++) {

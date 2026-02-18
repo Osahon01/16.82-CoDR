@@ -103,7 +103,7 @@ vector_double problem_fvd::fitness(const vector_double &x, bool eval) const{
         // Package objective and constraint values
         vector_double ret{};
         if (eval){
-            ret = {V_cruise,
+            ret = {Range,
                     x_TO,
                     m,
                     1-std::exp(-log_f),
