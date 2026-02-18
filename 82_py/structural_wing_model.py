@@ -198,10 +198,11 @@ model = StructuralWingModel(
 )
 
 m_spar, m_skin = model.mass_breakdown()
-
+'''
 print(f"Span b              : {model.span:.3f} m")
 print(f"Mean chord c_bar    : {model.mean_chord:.3f} m")
 print(f"Root bending moment : {model.root_bending_moment_elliptical():.1f} N*m")
 print(f"Estimated spar mass : {m_spar:.2f} kg")
 print(f"Estimated skin mass : {m_skin:.2f} kg")
 print(f"Total (spar+skin)   : {(m_spar + m_skin):.2f} kg")
+'''

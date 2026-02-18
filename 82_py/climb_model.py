@@ -143,7 +143,7 @@ class ClimbModel:
         if self.epsilon_battery <= 0:
             raise ValueError("epsilon_battery must be positive.")
         energy_required = self.battery_energy_required()
-        return energy_required / self.epsilon_battery
+        return energy_required.magnitude / self.epsilon_battery
 
     def time_of_climb(self):
         """

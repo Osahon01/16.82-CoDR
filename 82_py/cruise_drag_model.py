@@ -50,7 +50,7 @@ D_total = D_i + D_p
 
 
 # Plot
-PLOT = True
+PLOT = False
 if PLOT:
     plt.figure(figsize=(8, 6))
     plt.plot(V_CRUISE_VEC, D_i, label="Induced Drag")
@@ -75,5 +75,5 @@ def AR_opt():
     return round(AR[min_index], 2)
 
 
-print(f"{40 * '='}\nVelocity at Minimum Cruise Drag: {v_opt()}, m/s\n{40 * '='}\n")
+# print(f"{40 * '='}\nVelocity at Minimum Cruise Drag: {v_opt()}, m/s\n{40 * '='}\n")
 # print(f"{40 * '='}\nAR at Minimum Cruise Drag: {AR_opt()}\n{40 * '='}")
