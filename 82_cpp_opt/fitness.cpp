@@ -22,12 +22,12 @@ vector_double::size_type problem_fvd::get_nec() const{
     return 2;
 }
 vector_double::size_type problem_fvd::get_nic() const{
-    return 3;
+    return 4;
 }
 
 std::pair<vector_double, vector_double> problem_fvd::get_bounds() const{
-    vector_double lb = {1500.,0.,10.,3.,0.,5.,0.,30.,0.,0.};
-    vector_double ub = {8618.,10.,500.,15.,50000.,20.,1.,60.,20.,1.4};
+    vector_double lb = {0.5,0.,10.,3.,0.,5.,0.,30.,0.,0.};
+    vector_double ub = {1.5,2.,500.,15.,50000.,20.,1.,60.,20.,1.4};
     std::pair<vector_double, vector_double> ret(lb,ub);
     return ret;
 }
@@ -48,7 +48,7 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         //     return ret;
         // }
 
-        auto m = x[0];
+        auto m_fudge = x[0];
         auto log_f = x[1];// Equal to -ln(1-f)
         auto S = x[2];
         auto AR = x[3];
@@ -58,11 +58,16 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         auto delta_F_TO = x[7];
         auto CL_TO = x[8];
         auto CL_cruise = x[9];
+
+
+        double S_wet = 2.*S*(1.2) + 69.;// The 69 is a rough estimate for the fusl area of the EL9
+        double m_struc = 1000. * (S_wet / 140.);
+        double m = 1.5 * m_struc * std::exp(log_f) * m_fudge;
+        double con_max_mass = m - 8168.;
         // Calculate generally useful stuff, avoid recalculation
         double b = std::pow(AR*S,0.5);
         double c = b/AR;
         double A_d = b*h_d;
-        double S_wet = 2.*S*(1.2) + 69.;// The 69 is a rough estimate for the fusl area of the EL9
         // Calculate TO velocity and required jet velocity to make thrust, and finally delta CJ
         double V_TO = std::pow((2*m*g)/(S*CL_TO*rho_0k),0.5);
         double Tprimec_TO = T_TO / (0.5*rho_0k*V_TO*V_TO*S);
@@ -89,7 +94,6 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         double con_min_range = (min_Range - Range)/min_Range;
         double max_Power = std::max(P_TO_shaft,P_cruise_shaft);
 
-        double m_struc = 1000. * (S_wet / 140.);
         double m_prop = std::max(P_TO_shaft,P_cruise_shaft) / P_spec_prop;
         double m_gen = max_Power / P_spec_gen;
         double m_calc_nofuel = m_struc+m_prop+m_pax+m_gen;
@@ -102,7 +106,8 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
                             resid_mass,
                             con_min_range,
                             con_max_Tprimec_TO,
-                            con_min_V_cruise,};
+                            con_min_V_cruise,
+                            con_max_mass};
         // A physically impossible situation will usually result in a bunch of NaNs,
         // and bad inputs might give Inf due to division by zero.
         // If this happens, return a big penalty

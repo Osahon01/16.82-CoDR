@@ -50,26 +50,26 @@ int main() {
         else outfile << "\n";
     }
 
-    double min_V_cruises[] = {50., 75., 100., 125., 150., 175., 200.};
-    double min_Ranges[] = {2420e+3*1, 
-                            // 2420e+3*2, 
-                            // 2420e+3*3, 
-                            // 2420e+3*4, 
-                            // 2420e+3*5, 
-                            // 2420e+3*6, 
+    double min_V_cruises[] = {70., 85., 100., 115., 130., 145., 160.};
+    double min_Ranges[] = {2420e+3*0.5, 
+                            2420e+3*1., 
+                            2420e+3*1.5, 
+                            2420e+3*2., 
+                            2420e+3*2.5, 
+                            2420e+3*3., 
                         };
 
-    for (auto min_Range : min_Ranges) {
-        pfvd_obj.min_Range = min_Range;
+    for (auto min_Param : min_V_cruises) {
+        pfvd_obj.min_V_cruise = min_Param;
         pagmo::problem pfvd{pfvd_obj};
         algorithm inner_algo{sade(300)};
         algorithm algo{
             cstrs_self_adaptive(
-                60u,
+                256u,
                 inner_algo
             )
         };
-        algo.set_seed(42069);
+        algo.set_seed(42070);
         archipelago archi(12u, algo, pfvd, 200u);
         archi.evolve(1);
         archi.wait_check();
@@ -85,7 +85,7 @@ int main() {
             }
         }
         // Write results to CSV
-        outfile << min_Range << "," << best_takeoff_dist << ",";
+        outfile << min_Param << "," << best_takeoff_dist << ",";
         for (int i = 0; i < best_plane.size(); i++) {
             outfile << best_plane[i];
             if (i < best_plane.size() - 1) outfile << ",";
@@ -93,7 +93,7 @@ int main() {
         outfile << "\n";
 
         // Optional: also print to console
-        std::cout << "Min range : " << min_Range << '\n';
+        std::cout << "Min cruise velocity : " << min_Param << '\n';
         std::cout << "Best takeoff : " << best_takeoff_dist << '\n';
         std::cout << "Best design : {";
         for (int i = 0; i < best_plane.size(); i++) {
@@ -103,6 +103,8 @@ int main() {
             }
         }
         std::cout << "}\n";
+        std::cout << "CL_TO residual : " << pfvd_obj.fitness(best_plane)[1] << '\n';
+        std::cout << "Mass residual : " << pfvd_obj.fitness(best_plane)[2] << '\n';
         std::cout << "=================================================================\n";
     }
 
