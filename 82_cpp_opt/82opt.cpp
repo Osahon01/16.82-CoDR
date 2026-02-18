@@ -95,13 +95,21 @@ int main() {
 
     double min_V_cruises[] = {60.,70.,80.,90.,100.,110.,120.,130.,140.,150.,160.,170.,180.,190.,200.};
     double min_Ranges[] = {2420e+3*0.5, 
+                            2420e+3*0.75, 
                             2420e+3*1., 
-                            2420e+3*1.5, 
+                            2420e+3*1.25, 
+                            2420e+3*1.5,
+                            2420e+3*1.75,  
                             2420e+3*2., 
-                            2420e+3*2.5, 
-                            2420e+3*3.,  
-                            2420e+3*3.5, 
+                            2420e+3*2.25, 
+                            2420e+3*2.5,
+                            2420e+3*2.75,  
+                            2420e+3*3., 
+                            2420e+3*3.25,  
+                            2420e+3*3.5,
+                            2420e+3*3.75,  
                             2420e+3*4., 
+                            2420e+3*4.25, 
                             2420e+3*4.5,
                         };
 
@@ -165,7 +173,12 @@ int main() {
         std::cout << "CL_TO residual : " << pfvd_obj.fitness(best_plane)[1] << '\n';
         std::cout << "Mass residual : " << pfvd_obj.fitness(best_plane)[2] << '\n';
         std::cout << "=================================================================\n";
-        data.push_back(pfvd_obj.fitness(best_plane, true));
+        if(pfvd_obj.fitness(best_plane)[1] < 1e-5 && 
+            pfvd_obj.fitness(best_plane)[2] < 1e-5 ) {
+                data.push_back(pfvd_obj.fitness(best_plane, true));
+        std::cout << "Data saved\n";
+        std::cout << "=================================================================\n";
+            }
     }
     save_to_csv(data,headers,"results.csv");
     std::cout << "Results written to results.csv\n";
