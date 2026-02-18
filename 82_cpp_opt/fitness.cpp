@@ -27,7 +27,7 @@ vector_double::size_type problem_fvd::get_nic() const{
 
 std::pair<vector_double, vector_double> problem_fvd::get_bounds() const{
     vector_double lb = {0.5,0.,10.,3.,0.,5.,0.,30.,0.,0.};
-    vector_double ub = {1.5,2.,500.,15.,50000.,20.,1.,60.,20.,1.4};
+    vector_double ub = {2.5,2.,500.,15.,50000.,20.,1.,60.,20.,1.4};
     std::pair<vector_double, vector_double> ret(lb,ub);
     return ret;
 }
@@ -35,7 +35,7 @@ std::pair<vector_double, vector_double> problem_fvd::get_bounds() const{
 // Calculates the fitness function and associated constraints,
 // in the form {fitness, eq..., ineq...}
 // All units in radians
-vector_double problem_fvd::fitness(const vector_double &x) const{
+vector_double problem_fvd::fitness(const vector_double &x, bool eval) const{
 
 
     try{
@@ -48,7 +48,7 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         //     return ret;
         // }
 
-        auto m_fudge = x[0];
+        auto m_fudge = x[0];// Fudge factor to ensure the mass estimate going in is correlated to the final mass
         auto log_f = x[1];// Equal to -ln(1-f)
         auto S = x[2];
         auto AR = x[3];
@@ -101,13 +101,31 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         double con_min_V_cruise = (min_V_cruise - V_cruise)/min_V_cruise;
 
         // Package objective and constraint values
-        vector_double ret = {x_TO/40.,
-                            resid_CL_TO,
-                            resid_mass,
-                            con_min_range,
-                            con_max_Tprimec_TO,
-                            con_min_V_cruise,
-                            con_max_mass};
+        vector_double ret{};
+        if (eval){
+            ret = {V_cruise,
+                    x_TO,
+                    m,
+                    1-std::exp(-log_f),
+                    x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],
+                    D_cruise / (q_cruise*S),
+                    resid_CL_TO,
+                    resid_mass,
+                    con_min_range,
+                    con_max_Tprimec_TO,
+                    con_min_V_cruise,
+                    con_max_mass,
+                    P_TO_shaft,
+                    P_cruise_shaft,};
+        }else{
+            ret = {x_TO/40.,
+                                resid_CL_TO,
+                                resid_mass,
+                                con_min_range,
+                                con_max_Tprimec_TO,
+                                con_min_V_cruise,
+                                con_max_mass};
+        }
         // A physically impossible situation will usually result in a bunch of NaNs,
         // and bad inputs might give Inf due to division by zero.
         // If this happens, return a big penalty
