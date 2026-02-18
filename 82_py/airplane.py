@@ -19,6 +19,7 @@ from CoDR_equations import g
 # Design parameters (FIXED)
 N_pass = 9
 RANGE = 2500000 * ureg("m")
+xTO = 300 / 3.28084  # Takeoff distance in meters (converted from 300 ft)
 CLTO = 6.1  # Dalton will tell us
 CDTO = 1.59  # Dalton
 CMTO = 1.3  # Dalton (?!!)
@@ -57,13 +58,13 @@ tau_allow_design = (
 
 
 class Airplane:
-    def __init__(self, v_cruise, AR, W, W_S=W_S):
+    def __init__(self, v_cruise, AR, W, xTO, W_S):
         self.v_cruise = v_cruise * ureg("m/s")
         self.AR = AR
         self.W = W
+        self.xTO = xTO
         self.W_S = W_S
         self.S = (self.W / self.W_S) / g  # Wing area (m^2)
-        self.T = self.W * T_W  # Takeoff thrust (N)
 
     def run_cruise_model(self):
         cruise = CruiseModel(
