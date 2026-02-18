@@ -9,16 +9,16 @@ from CoDR_equations import g
 
 
 FILE_NAME = "82_py/airplane_optimization_results.pkl"
-MASS_TARGETS = np.linspace(4000, 8000, 3)
-V_SWEEP = np.linspace(50, 200, 10)
+MASS_TARGETS = np.linspace(4000, 8000, 5)
+V_SWEEP = np.linspace(50, 130, 5)
 
 # for fixed run 1
-AR_SWEEP = np.linspace(4, 15, 10)
+AR_SWEEP = np.linspace(4, 15, 5)
 W_S_FIXED = 130
 
 # for fixed run 2
 AR_FIXED = 9
-W_S_SWEEP = np.linspace(50, 90, 10)
+W_S_SWEEP = np.linspace(50, 90, 5)
 
 pareto_results_ar = []
 pareto_results_ws = []
@@ -40,7 +40,7 @@ def run_closure():
                 W=weight,
                 W_S=W_S_FIXED,
             )
-            _, masses = plane.runner()
+            masses = plane.runner()
             m = np.sum(masses)
             return np.abs(m - mass_target)  # normalized for stability
 
@@ -57,7 +57,7 @@ def run_closure():
                 W_S=w_s,
             )
 
-            _, masses = plane.runner()
+            masses = plane.runner()
             m = np.sum(masses)
             return np.abs(m - mass_target)
 
@@ -81,17 +81,20 @@ def run_closure():
         # w/s optimization
         if not ar:
             obj = make_obj_mass_error2(weight, mass_target)
+            print("\n  Starting W/S Sweep")
             for ws0 in W_S_SWEEP:
+                print(f"        iteration for ws0: {ws0}\n")
                 x0 = [v0, ws0]
                 res = minimize(
                     obj,
                     x0,
-                    method="L-BFGS-B",
+                    method="Nelder-Mead",
+                    # method="L-BFGS-B",
                     bounds=bounds2,
                     options={
-                        "ftol": 1e-3,
-                        "gtol": 1e-3,
-                        "maxfun": 500,
+                        "ftol": 1e-1,
+                        "gtol": 1e-1,
+                        "maxfun": 25,
                     },
                 )
 
@@ -107,13 +110,13 @@ def run_closure():
                     W_S=w_s_best,
                 )
 
-                x_TO, masses = plane.runner()
+                masses = plane.runner()
 
                 mass_error = abs(np.sum(masses) - mass_target)
 
                 v_opt_list.append(v_best)
                 AR_opt_list.append(w_s_best)
-                x_TO_list.append(x_TO)
+                # x_TO_list.append(x_TO)
                 mass_error_list.append(mass_error)
 
             return v_opt_list, AR_opt_list, x_TO_list, mass_error_list
@@ -121,18 +124,21 @@ def run_closure():
         # AR optimization
         obj = make_obj_mass_error1(weight, mass_target)
 
+        print("\n  Starting AR Sweep")
         for ar0 in AR_SWEEP:
             x0 = [v0, ar0]
+            print(f"        iteration for ar0: {ar0}\n")
 
             res = minimize(
                 obj,
                 x0,
-                method="L-BFGS-B",
+                method="Nelder-Mead",
+                # method="L-BFGS-B",
                 bounds=bounds1,
                 options={
-                    "ftol": 1e-3,
-                    "gtol": 1e-3,
-                    "maxfun": 500,
+                    "ftol": 1e-1,
+                    "gtol": 1e-1,
+                    "maxfun": 25,
                 },
             )
 
@@ -147,13 +153,13 @@ def run_closure():
                 W=weight,
             )
 
-            x_TO, masses = plane.runner()
+            masses = plane.runner()
 
             mass_error = abs(np.sum(masses) - mass_target)
 
             v_opt_list.append(v_best)
             AR_opt_list.append(AR_best)
-            x_TO_list.append(x_TO)
+            # x_TO_list.append(x_TO)
             mass_error_list.append(mass_error)
 
         return v_opt_list, AR_opt_list, x_TO_list, mass_error_list
@@ -165,6 +171,7 @@ def run_closure():
         v_opt_list_ws, AR_opt_list_ws, x_TO_list_ws, mass_error_list_ws = [], [], [], []
 
         for v0 in V_SWEEP:
+            print(f"\n    iteration for v0: {v0}\n")
             weight = mass_target * g
 
             # wing loading opt
@@ -195,7 +202,7 @@ def run_closure():
 
         v_opt_list_ws = np.array(v_opt_list_ws)
         AR_opt_list_ws = np.array(AR_opt_list_ws)
-        x_TO_list_ws = np.array(x_TO_list_ws)
+        # x_TO_list_ws = np.array(x_TO_list_ws)
         mass_error_list_ws = np.array(mass_error_list_ws)
 
         feasible_mask_ws = mass_error_list_ws < 50
@@ -205,14 +212,14 @@ def run_closure():
                 "mass_target": mass_target,
                 "v_cruise": v_opt_list_ws[feasible_mask_ws],
                 "AR": AR_opt_list_ws[feasible_mask_ws],
-                "x_TO": x_TO_list_ws[feasible_mask_ws],
+                # "x_TO": x_TO_list_ws[feasible_mask_ws],
                 "mass_error": mass_error_list_ws[feasible_mask_ws],
             }
         )
 
         v_opt_list_ar = np.array(v_opt_list_ar)
         AR_opt_list_ar = np.array(AR_opt_list_ar)
-        x_TO_list_ar = np.array(x_TO_list_ar)
+        # x_TO_list_ar = np.array(x_TO_list_ar)
         mass_error_list_ar = np.array(mass_error_list_ar)
 
         feasible_mask_ar = mass_error_list_ar < 50
@@ -222,7 +229,7 @@ def run_closure():
                 "mass_target": mass_target,
                 "v_cruise": v_opt_list_ar[feasible_mask_ar],
                 "AR": AR_opt_list_ar[feasible_mask_ar],
-                "x_TO": x_TO_list_ar[feasible_mask_ar],
+                # "x_TO": x_TO_list_ar[feasible_mask_ar],
                 "mass_error": mass_error_list_ar[feasible_mask_ar],
             }
         )

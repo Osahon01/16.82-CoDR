@@ -26,7 +26,9 @@ CMTO = 1.3  # Dalton (?!!)
 W = 12500 * 4.445  # N (converted from lbs)
 W_S = 130  # kg/m^2
 T_W = 0.3
-A_prop_over_S = 0.05  # Propeller disk area as a fraction of wing area (assumed for sizing purposes)
+A_prop_over_S = (
+    0.05  # Propeller disk area as a fraction of wing area (assumed for sizing purposes)
+)
 h_cruise = 3048.0 * ureg("m")  # 10,000 ft in meters
 gamma = math.radians(25.0)  # Climb angle in radians
 eta_battery = 0.95
@@ -59,7 +61,9 @@ tau_allow_design = (
 
 
 class Airplane:
-    def __init__(self, v_cruise, AR, W, xTO, W_S, A_prop_over_S=A_prop_over_S):
+    def __init__(
+        self, v_cruise, AR, W, xTO=300.0 / 3.28, W_S=W_S, A_prop_over_S=A_prop_over_S
+    ):
         self.v_cruise = v_cruise * ureg("m/s")
         self.AR = AR
         self.W = W
@@ -196,7 +200,7 @@ print(
     f"\nmasses: {masses}\n{50 * '='}"
 )
 
-'''drela_forehead_2 = Airplane(v_cruise=70, AR=15, W=W)
+"""drela_forehead_2 = Airplane(v_cruise=70, AR=15, W=W)
 x_TO, masses = drela_forehead_2.runner()
 drag, CD_total = drela_forehead_2.run_cruise_model()
 print(
@@ -218,4 +222,4 @@ drag, CD_total = drela_forehead_2.run_cruise_model()
 print(
     f"{50 * '='}\nCruise model test\nDrag: {round(drag, 2)}\nCD_total: {(round(CD_total, 2))}"
     f"\nx_T0: {round(x_TO, 2)}\nmasses: {round(masses[0], 2)}\n{50 * '='}"
-)'''
+)"""
