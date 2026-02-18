@@ -6,6 +6,7 @@
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/algorithms/sade.hpp>
+#include <pagmo/algorithms/cstrs_self_adaptive.hpp>
 #include <pagmo/archipelago.hpp>
 #include <pagmo/problem.hpp>
 #include <pagmo/algorithms/gaco.hpp>
@@ -16,7 +17,7 @@ int main() {
 
     auto pfvd_obj = make_pfvd_obj(125.,2420000.);
 
-    pagmo::vector_double x1 = {8260.27,0.597822,105.238,6.73066,25193.1,11.0429,0.716945,53.9623,10.8699,0.105031};
+    pagmo::vector_double x1 = {8602.03,0.762815,99.6058,13.3569,34166.2,14.9924,0.964673,51.4516,8.63691,0.120406};
     pfvd_obj.fitness(x1);
 
     // Design variable headers
@@ -50,14 +51,26 @@ int main() {
     }
 
     double min_V_cruises[] = {50., 75., 100., 125., 150., 175., 200.};
+    double min_Ranges[] = {2420e+3*1, 
+                            // 2420e+3*2, 
+                            // 2420e+3*3, 
+                            // 2420e+3*4, 
+                            // 2420e+3*5, 
+                            // 2420e+3*6, 
+                        };
 
-    for (auto min_V_cruise : min_V_cruises) {
-        pfvd_obj.min_V_cruise = min_V_cruise;
+    for (auto min_Range : min_Ranges) {
+        pfvd_obj.min_Range = min_Range;
         pagmo::problem pfvd{pfvd_obj};
-
-        algorithm algo{gaco(10000, 63, 1, 0, 0.01, 1U, 7, 10000)};
+        algorithm inner_algo{sade(300)};
+        algorithm algo{
+            cstrs_self_adaptive(
+                60u,
+                inner_algo
+            )
+        };
         algo.set_seed(42069);
-        archipelago archi(32u, algo, pfvd, 10000u);
+        archipelago archi(12u, algo, pfvd, 200u);
         archi.evolve(1);
         archi.wait_check();
 
@@ -71,9 +84,8 @@ int main() {
                 best_takeoff_dist = curr_dist;
             }
         }
-
         // Write results to CSV
-        outfile << min_V_cruise << "," << best_takeoff_dist << ",";
+        outfile << min_Range << "," << best_takeoff_dist << ",";
         for (int i = 0; i < best_plane.size(); i++) {
             outfile << best_plane[i];
             if (i < best_plane.size() - 1) outfile << ",";
@@ -81,8 +93,16 @@ int main() {
         outfile << "\n";
 
         // Optional: also print to console
-        std::cout << "Min v cruise : " << min_V_cruise << '\n';
+        std::cout << "Min range : " << min_Range << '\n';
         std::cout << "Best takeoff : " << best_takeoff_dist << '\n';
+        std::cout << "Best design : {";
+        for (int i = 0; i < best_plane.size(); i++) {
+            std::cout << best_plane[i];
+            if (i < best_plane.size() - 1){
+                std::cout << ",";
+            }
+        }
+        std::cout << "}\n";
         std::cout << "=================================================================\n";
     }
 

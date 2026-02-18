@@ -27,7 +27,7 @@ vector_double::size_type problem_fvd::get_nic() const{
 
 std::pair<vector_double, vector_double> problem_fvd::get_bounds() const{
     vector_double lb = {1500.,0.,10.,3.,0.,5.,0.,30.,0.,0.};
-    vector_double ub = {8618.,1.,500.,15.,50000.,20.,1.,60.,20.,1.4};
+    vector_double ub = {8618.,10.,500.,15.,50000.,20.,1.,60.,20.,1.4};
     std::pair<vector_double, vector_double> ret(lb,ub);
     return ret;
 }
@@ -49,7 +49,7 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         // }
 
         auto m = x[0];
-        auto f = x[1];
+        auto log_f = x[1];// Equal to -ln(1-f)
         auto S = x[2];
         auto AR = x[3];
         auto T_TO = x[4];
@@ -66,12 +66,12 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         // Calculate TO velocity and required jet velocity to make thrust, and finally delta CJ
         double V_TO = std::pow((2*m*g)/(S*CL_TO*rho_0k),0.5);
         double Tprimec_TO = T_TO / (0.5*rho_0k*V_TO*V_TO*S);
-        double con_max_Tprimec_TO = Tprimec_TO - 3.5;
+        double con_max_Tprimec_TO = (Tprimec_TO - 3.5)/3.5;
         double Vj_TO = std::pow((2*T_TO)/(rho_0k*A_d)+V_TO*V_TO,0.5);
         double delta_CJ_TO = ((2*h_d)/c)*((Vj_TO/V_TO)*(Vj_TO/V_TO)-1);
         // Use models to get the blown CL and enforce closure via residual
         double CL_TO_surr = blown_CL_surr(alpha_TO,delta_CJ_TO,h_d / S, delta_F_TO);
-        double resid_CL_TO = CL_TO_surr - CL_TO;
+        double resid_CL_TO = (CL_TO_surr - CL_TO)/CL_TO;
         double eta_fr_TO = (2*V_TO)/(V_TO+Vj_TO);
         double P_TO_shaft = (T_TO*V_TO)/eta_fr_TO;
 
@@ -84,24 +84,25 @@ vector_double problem_fvd::fitness(const vector_double &x) const{
         double Vj_cruise = std::pow((2*D_cruise)/(rho_10k*A_d)+V_cruise*V_cruise,0.5);
         double eta_fr_cruise = (2*V_cruise)/(Vj_cruise+V_cruise);
         double P_cruise_shaft = (D_cruise*V_cruise) / eta_fr_cruise;
-        double Range = ((h_avgas*eta_gen*eta_fr_cruise*0.95)/g)*LD_cruise*std::log(1./(1.+(-1.*f)));
+        double Range = ((h_avgas*eta_gen*eta_fr_cruise*0.95)/g)*LD_cruise*log_f;
 
-        double con_min_range = min_Range - Range;
+        double con_min_range = (min_Range - Range)/min_Range;
+        double max_Power = std::max(P_TO_shaft,P_cruise_shaft);
 
         double m_struc = 1000. * (S_wet / 140.);
         double m_prop = std::max(P_TO_shaft,P_cruise_shaft) / P_spec_prop;
-        double m_calc_nofuel = m_struc+m_prop+m_pax;
-        double m_calc = m_calc_nofuel / (1-f);
-        double resid_mass = m_calc - m;
-        double con_min_V_cruise = min_V_cruise - V_cruise;
+        double m_gen = max_Power / P_spec_gen;
+        double m_calc_nofuel = m_struc+m_prop+m_pax+m_gen;
+        double resid_mass = (m_calc_nofuel - m*std::exp(-log_f))/std::max(m,m_calc_nofuel);
+        double con_min_V_cruise = (min_V_cruise - V_cruise)/min_V_cruise;
 
         // Package objective and constraint values
-        vector_double ret = {x_TO,
+        vector_double ret = {x_TO/40.,
                             resid_CL_TO,
                             resid_mass,
                             con_min_range,
                             con_max_Tprimec_TO,
-                            con_min_V_cruise};
+                            con_min_V_cruise,};
         // A physically impossible situation will usually result in a bunch of NaNs,
         // and bad inputs might give Inf due to division by zero.
         // If this happens, return a big penalty

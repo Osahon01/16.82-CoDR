@@ -45,6 +45,7 @@ struct problem_fvd{
 
         static constexpr double eta_gen = 0.2;
         static constexpr double P_spec_prop = 6000.;
+        static constexpr double P_spec_gen = 6300.;
 
         static constexpr double m_pax = 900.;
         static constexpr double h_avgas = 43.5e+6;
