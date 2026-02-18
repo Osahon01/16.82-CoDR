@@ -79,18 +79,21 @@ int main() {
         "delta_F_TO",
         "CL_TO",
         "CL_cruise",
+        "CD_cruise",
         "CL residual",
         "Mass residual",
         "Range constraint",
         "Tprime constraint",
         "Cruise velocity constraint",
-        "Max mass constraint"
+        "Max mass constraint",
+        "Shaft power TO",
+        "Shaft power cruise",
     };
 
     std::vector<std::vector<double>> data{};
 
 
-    double min_V_cruises[] = {60.,65.,70.,75.,80.,85.,90.,95.,100.,105.,110.,115.,120.,125.,130.,135.,140.,145.,150.,155.,160.,};
+    double min_V_cruises[] = {60.,70.,80.,90.,100.,110.,120.,130.,140.,150.,160.,170.,180.,190.,200.};
     double min_Ranges[] = {2420e+3*0.5, 
                             2420e+3*1., 
                             2420e+3*1.5, 
@@ -100,6 +103,8 @@ int main() {
                         };
 
     for (auto min_Param : min_V_cruises) {
+        int n_tries = 0;
+        retry:
         pfvd_obj.min_V_cruise = min_Param;
         pagmo::problem pfvd{pfvd_obj};
         algorithm inner_algo{sade(300)};
@@ -109,7 +114,16 @@ int main() {
                 inner_algo
             )
         };
-        algo.set_seed(42069);
+        // 1. Get the current time point from the system clock
+        std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+        // 2. Cast the time point's duration to milliseconds since the epoch
+        //    and get the count as a 64-bit integer
+        std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+
+        // 3. Extract the raw count of milliseconds
+        uint64_t clockseed = ms.count();
+        algo.set_seed(clockseed);
         archipelago archi(12u, algo, pfvd, 200u);
         archi.evolve(1);
         archi.wait_check();
@@ -124,7 +138,16 @@ int main() {
                 best_takeoff_dist = curr_dist;
             }
         }
-
+        if((pfvd_obj.fitness(best_plane)[1] > 1e-5 || 
+            pfvd_obj.fitness(best_plane)[2] > 1e-5 || 
+            std::abs(pfvd_obj.fitness(best_plane)[5]) > 1. ) && n_tries<5){
+            n_tries++;
+            std::cout<<"Residuals too big, retrying\n";
+            std::cout << "CL_TO residual : " << pfvd_obj.fitness(best_plane)[1] << '\n';
+            std::cout << "Mass residual : " << pfvd_obj.fitness(best_plane)[2] << '\n';
+            std::cout << "Velocity deficit : " << pfvd_obj.fitness(best_plane)[5] << '\n';
+            goto retry;
+        }
 
         // Optional: also print to console
         std::cout << "Min cruise velocity : " << min_Param << '\n';

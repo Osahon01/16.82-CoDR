@@ -108,12 +108,15 @@ vector_double problem_fvd::fitness(const vector_double &x, bool eval) const{
                     m,
                     1-std::exp(-log_f),
                     x[2],x[3],x[4],x[5],x[6],x[7],x[8],x[9],
+                    D_cruise / (q_cruise*S),
                     resid_CL_TO,
                     resid_mass,
                     con_min_range,
                     con_max_Tprimec_TO,
                     con_min_V_cruise,
-                    con_max_mass};
+                    con_max_mass,
+                    P_TO_shaft,
+                    P_cruise_shaft,};
         }else{
             ret = {x_TO/40.,
                                 resid_CL_TO,
