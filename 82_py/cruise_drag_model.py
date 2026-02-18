@@ -5,11 +5,11 @@ from ambiance import Atmosphere
 # (Assumed) Constants
 pi = np.pi
 AR = 9.7 # Caravan like
-e = 0.7
+e = 0.825
 
 # Aircraft parameters (Caravan-like)
 W = 39000  # N
-S = 25.96  # m^2
+S = 26  # m^2
 h = 3000  # meters (~10,000 ft)
 
 # Density as a function of atmosphere
@@ -17,7 +17,6 @@ atm = Atmosphere(h)
 rho = atm.density[0]
 
 # Velocity sweep (m/s)
-# NOTE: Let's be consistent with cruise velocity calls across scripts
 V_CRUISE_VEC = np.linspace(
     40, 120, 500
 )  # Note: Cessna Caravan has cruise speed of about 96 m/s
@@ -43,12 +42,10 @@ def parastic_drag():
 
 
 CD0 = parastic_drag()
-
-
 # Our Drag components
 CDi = CL**2 / (pi * AR * e)
-D_i = q * S * CDi
-D_p = q * S * CD0
+D_i = q *S* CDi
+D_p = q*S*CD0
 D_total = D_i + D_p
 
 
