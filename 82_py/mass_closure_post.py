@@ -12,7 +12,7 @@ with open(FILE_NAME, "rb") as f:
     data = pickle.load(f)
 
 pareto_results_ar = data["pareto_results_ar"]
-pareto_results_ws = data["pareto_results_ws"]
+pareto_results_xt0 = data["pareto_results_xt0"]
 
 plt.figure()
 for i, res in enumerate(pareto_results_ar):
@@ -30,7 +30,7 @@ plt.legend(fontsize=16)
 plt.show()
 
 plt.figure()
-for i, res in enumerate(pareto_results_ws):
+for i, res in enumerate(pareto_results_xt0):
     plt.scatter(
         res["x_TO"],
         res["v_cruise"],

@@ -62,7 +62,7 @@ tau_allow_design = (
 
 class Airplane:
     def __init__(
-        self, v_cruise, AR, W, xTO=300.0 / 3.28, W_S=W_S, A_prop_over_S=A_prop_over_S
+        self, v_cruise, AR, W, xTO=(300.0 / 3.28), W_S=W_S, A_prop_over_S=A_prop_over_S
     ):
         self.v_cruise = v_cruise * ureg("m/s")
         self.AR = AR
